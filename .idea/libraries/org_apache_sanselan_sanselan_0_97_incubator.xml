@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="org.apache.sanselan:sanselan:0.97-incubator" type="repository">
+    <properties maven-id="org.apache.sanselan:sanselan:0.97-incubator" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
