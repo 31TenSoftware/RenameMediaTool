@@ -1,22 +1,25 @@
 package com.thirtyonetensoftware.renamemediatool;
 
-import com.drew.imaging.ImageMetadataReader;
-import com.drew.imaging.ImageProcessingException;
-import com.drew.metadata.Metadata;
-import com.drew.metadata.exif.ExifSubIFDDirectory;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.scene.control.TextArea;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 
 public class Worker extends Task<Integer> {
+
+    // ------------------------------------------------------------------------
+    // Class Variables
+    // ------------------------------------------------------------------------
+
+    private static final int PROGRESS_LOOPS = 3;
+
+    // EXIF Date/Time format
+    private static final SimpleDateFormat mOutputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     // ------------------------------------------------------------------------
     // Instance Variables
@@ -24,9 +27,20 @@ public class Worker extends Task<Integer> {
 
     private final File mFile;
 
-    private double mMaxProgress = 0;
+    private int mFileCount = 0;
 
-    private final SimpleDateFormat mFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss aa");
+    private int mMaxProgress = 0;
+
+    private int mProgress = 0;
+
+    private MessageConsumer mMessageConsumer;
+
+    private final FileFilter mDirectoryFilter = new FileFilter() {
+        @Override
+        public boolean accept(File file) {
+            return file.isDirectory();
+        }
+    };
 
     private final FileFilter mFileFilter = new FileFilter() {
         @Override
@@ -47,12 +61,10 @@ public class Worker extends Task<Integer> {
     public Worker(final TextArea textArea, File file) {
         mFile = file;
 
-        messageProperty().addListener(new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
-                textArea.appendText(t1);
-            }
-        });
+        textArea.clear();
+
+        mMessageConsumer = new MessageConsumer(textArea);
+        mMessageConsumer.start();
     }
 
     // ------------------------------------------------------------------------
@@ -63,11 +75,12 @@ public class Worker extends Task<Integer> {
     protected Integer call() throws Exception {
         setup(mFile);
 
-        updateMessage("\nSTARTING\n\n");
+        mMessageConsumer.add("\nSTARTING\n");
 
-        int result = traverse(mFile);
+        int result = processDirectory(mFile);
 
-        updateMessage("\nFINISHED\n");
+        updateProgress(mFileCount, mFileCount);
+        mMessageConsumer.add("\n\nFINISHED\n", false);
 
         return result;
     }
@@ -76,7 +89,8 @@ public class Worker extends Task<Integer> {
     protected void cancelled() {
         super.cancelled();
 
-        updateMessage("\nCANCELLED\n");
+        updateProgress(mFileCount, mFileCount);
+        mMessageConsumer.add("\nCANCELLED\n");
     }
 
     // ------------------------------------------------------------------------
@@ -84,12 +98,15 @@ public class Worker extends Task<Integer> {
     // ------------------------------------------------------------------------
 
     private void setup(File file) {
-        updateMessage("Determining number of files...\n");
+        mMessageConsumer.add("Determining number of files... ", false);
 
-        mMaxProgress = calculateTotalPhotos(file, 0);
+        mFileCount = calculateTotalPhotos(file, 0);
+        mMaxProgress = mFileCount * PROGRESS_LOOPS;
+
+        mMessageConsumer.add(String.valueOf(mFileCount), false);
     }
 
-    private double calculateTotalPhotos(File file, double max) {
+    private int calculateTotalPhotos(File file, int max) {
         File[] photosAndFolders = file.listFiles(mFileFilter);
         if (photosAndFolders != null) {
             max += photosAndFolders.length;
@@ -105,50 +122,108 @@ public class Worker extends Task<Integer> {
         return max;
     }
 
-    // pseudocode for renaming all the image files and setting the correct exif data
-
-    // first only worry about getting the date/time of the files correct
-    // because then it is trivial to sort by date/time (none will have the same date_time anymore), and rename
-
-    private int traverse(File file) {
-        File[] files = file.listFiles();
+    private int processDirectory(File file) {
+        File[] files = file.listFiles(mDirectoryFilter);
+        int result = 0;
 
         if (files != null) {
             for (File f : files) {
-                if (f.isDirectory()) {
-                    traverse(f);
-                }
-            }
+                result += processFiles(f);
 
-            for (File f : files) {
-                if (!f.isDirectory() && !isCancelled()) {
-                    try {
-                        Metadata metadata = ImageMetadataReader.readMetadata(f);
-
-                        ExifSubIFDDirectory exif
-                                = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-
-                        Date date;
-                        if (exif != null) {
-                            date = exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
-
-                            if (date == null) {
-                                date = new Date(f.lastModified());
-
-                                updateMessage("NEW DATETIME TAG: " + f.getName() + " -- " + mFormat.format(date) + "\n");
-                            }
-                        } else {
-                            date = new Date(f.lastModified());
-                            updateMessage("NO EXIF FOR: " + f.getName() + " --> " + mFormat.format(date) + "\n");
-                        }
-                    } catch (ImageProcessingException | IOException e) {
-                        updateMessage(f.getName() + " error " + "\n");
-                        return -1;
-                    }
-                }
+                result += processDirectory(f);
             }
         }
 
-        return 0;
+        return result;
     }
+
+    private int processFiles(File file) {
+        int result = 0;
+
+        File[] files = file.listFiles(mFileFilter);
+        if (files == null) {
+            mMessageConsumer.add("\nNO FILES FOUND IN: " + file.getPath() + "\n");
+            result++;
+            return result;
+        }
+
+        ArrayList<MediaItem> items = new ArrayList<>();
+        // for all the images, if we can determine a date/time, add it to the list
+        for (File f : files) {
+            if (isCancelled()) {
+                return result;
+            }
+
+            MediaItem item = new MediaItem(f);
+
+            if (!item.determineDateTime()) {
+                mMessageConsumer.add("\n" + item.getErrorMessage() + "\n");
+                result++;
+            } else {
+                items.add(item);
+            }
+
+            mProgress++;
+            updateProgress(mProgress, mMaxProgress);
+        }
+
+        // sort the items (will sort by date/time, then name)
+        Collections.sort(items);
+
+        // recalculate new dates if date/times are the same for sequential files in the list
+        for (int itemsIndex = 0; itemsIndex < items.size(); itemsIndex++) {
+            if (itemsIndex != items.size() - 1 &&
+                    items.get(itemsIndex).getDateTime().equals(items.get(itemsIndex + 1).getDateTime())) {
+                MediaItem item = items.get(itemsIndex);
+                ArrayList<MediaItem> itemsWithSameDateTime = new ArrayList<>();
+
+                for (int subItemsIndex = itemsIndex; subItemsIndex < items.size(); subItemsIndex++) {
+                    if (items.get(subItemsIndex).getDateTime().equals(item.getDateTime())) {
+                        itemsWithSameDateTime.add(items.get(subItemsIndex));
+                    }
+                }
+
+                Collections.sort(itemsWithSameDateTime);
+
+                int index = 0;
+                // get the date, add 5 seconds * index and set the date
+                for (MediaItem itemWithSameDateTime : itemsWithSameDateTime) {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(itemWithSameDateTime.getDateTime());
+                    calendar.add(Calendar.SECOND, index * 5);
+
+                    itemWithSameDateTime.setDateTime(calendar.getTime());
+
+                    index++;
+                }
+            }
+
+            mProgress++;
+            updateProgress(mProgress, mMaxProgress);
+        }
+
+        // TODO loop through the media items and calculate the new filenames for the ones with newDateTime
+
+        // loop through all images, if one will require a new date or filename, print it out
+        for (MediaItem item : items) {
+            if (isCancelled()) {
+                return result;
+            }
+
+            if (item.hasNewDateTime()) {
+                mMessageConsumer.add(item.getFile().getName() + " NEW DATE: " + mOutputFormat.format(item.getNewDateTime()));
+            }
+
+            if (item.hasNewFilename()) {
+                mMessageConsumer.add(item.getFile().getName() + " NEW FILENAME: " + item.getNewFilename());
+            }
+
+            mProgress++;
+            updateProgress(mProgress, mMaxProgress);
+        }
+
+        return result;
+    }
+
+    // TODO write a method that on a button click writes the new EXIF and filenames to disk
 }

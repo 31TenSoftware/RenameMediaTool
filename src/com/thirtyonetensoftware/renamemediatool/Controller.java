@@ -41,6 +41,8 @@ public class Controller {
             mPath.setText(file.getPath());
 
             mTask = new Worker(mResults, file);
+
+            mProgressBar.progressProperty().unbind();
             mProgressBar.setProgress(0);
             mProgressBar.progressProperty().bind(mTask.progressProperty());
 
@@ -52,8 +54,8 @@ public class Controller {
 
     public void onStopButtonClick() {
         if (mTask != null) {
-            mProgressBar.setProgress(0);
             mProgressBar.progressProperty().unbind();
+            mProgressBar.setProgress(0);
             mTask.cancel();
         }
     }
