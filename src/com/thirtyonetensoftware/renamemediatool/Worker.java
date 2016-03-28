@@ -16,7 +16,7 @@ public class Worker extends Task<Integer> {
     // Class Variables
     // ------------------------------------------------------------------------
 
-    private static final int PROGRESS_LOOPS = 3;
+    private static final int PROGRESS_LOOPS = 4;
 
     // EXIF Date/Time format
     private static final SimpleDateFormat mOutputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -202,7 +202,34 @@ public class Worker extends Task<Integer> {
             updateProgress(mProgress, mMaxProgress);
         }
 
-        // TODO loop through the media items and calculate the new filenames for the ones with newDateTime
+        // calculate new filenames for the ones with newDateTime
+        Calendar calendar = Calendar.getInstance();
+        int count = 0, dayOfYear = -1;
+        for (MediaItem item : items) {
+            calendar.setTime(item.getDateTime());
+
+            if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear) {
+                count++;
+            } else {
+                dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+                count = 0;
+            }
+
+            // if this returns true, then a file rename will occur
+            if (item.setFilename(count)) {
+                // TODO we must test that the name being renamed to doesnt already exist
+                // TODO test this code
+                File renameFile = new File(item.getNewFilename());
+
+                if (renameFile.exists()) {
+                    mMessageConsumer.add("\nRENAME WILL FAIL: " + item.getFile().getName() + " to -> " + item.getNewFilename() + "\n");
+                    result++;
+                }
+            }
+
+            mProgress++;
+            updateProgress(mProgress, mMaxProgress);
+        }
 
         // loop through all images, if one will require a new date or filename, print it out
         for (MediaItem item : items) {
@@ -211,11 +238,11 @@ public class Worker extends Task<Integer> {
             }
 
             if (item.hasNewDateTime()) {
-                mMessageConsumer.add(item.getFile().getName() + " NEW DATE: " + mOutputFormat.format(item.getNewDateTime()));
+                mMessageConsumer.add(item.getFile().getName() + " ... D->" + mOutputFormat.format(item.getNewDateTime()));
             }
 
             if (item.hasNewFilename()) {
-                mMessageConsumer.add(item.getFile().getName() + " NEW FILENAME: " + item.getNewFilename());
+                mMessageConsumer.add(" F-> " + item.getNewFilename(), false);
             }
 
             mProgress++;

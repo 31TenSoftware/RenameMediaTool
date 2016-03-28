@@ -17,11 +17,14 @@ import java.util.regex.Pattern;
 public class MediaItem implements Comparable<MediaItem> {
 
     // ------------------------------------------------------------------------
-    // Instance Variables
+    // Class Variables
     // ------------------------------------------------------------------------
 
     // EXIF Date/Time format
     private static final SimpleDateFormat mFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+
+    // Filename format
+    private static final SimpleDateFormat mFilenameFormat = new SimpleDateFormat("yyyy-MM-dd_");
 
     // Potential filename Date/Time format 1
     private static final SimpleDateFormat mFilenameFormat1 = new SimpleDateFormat("yyyy-MM");
@@ -104,8 +107,26 @@ public class MediaItem implements Comparable<MediaItem> {
         return mNewDateTime != null;
     }
 
+    public String getFilename() {
+        return mNewFilename != null ? mNewFilename : mFile.getName();
+    }
+
     public String getNewFilename() {
         return mNewFilename;
+    }
+
+    public boolean setFilename(int count) {
+        String name = mFilenameFormat.format(getDateTime());
+
+        name = name + (String.format("%04d", count));
+
+        if (name.equals(getFilename())) {
+            return false;
+        }
+        else {
+            mNewFilename = name;
+            return true;
+        }
     }
 
     public boolean hasNewFilename() {
