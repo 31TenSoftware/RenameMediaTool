@@ -3,20 +3,21 @@ package com.thirtyonetensoftware.renamemediatool;
 import javafx.animation.AnimationTimer;
 import javafx.scene.control.TextArea;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
 public class MessageConsumer extends AnimationTimer {
+
+    // ------------------------------------------------------------------------
+    // Class Variables
+    // ------------------------------------------------------------------------
+
+    private static final int CAPACITY = 75000;
 
     // ------------------------------------------------------------------------
     // Instance Variables
     // ------------------------------------------------------------------------
 
-    private final BlockingQueue<String> mMessageQueue = new LinkedBlockingQueue<>();
-
     private final TextArea mTextArea;
+
+    private StringBuffer buffer = new StringBuffer(CAPACITY);
 
     // ------------------------------------------------------------------------
     // Constructors
@@ -32,13 +33,8 @@ public class MessageConsumer extends AnimationTimer {
 
     @Override
     public void handle(long now) {
-        List<String> messages = new ArrayList<>();
-
-        mMessageQueue.drainTo(messages);
-
-        for (String message : messages) {
-            mTextArea.appendText(message);
-        }
+        mTextArea.appendText(buffer.toString());
+        buffer = new StringBuffer(CAPACITY);
     }
 
     // ------------------------------------------------------------------------
@@ -50,10 +46,6 @@ public class MessageConsumer extends AnimationTimer {
     }
 
     public void add(String text, boolean newLine) {
-        try {
-            mMessageQueue.put(newLine ? "\n" + text : text);
-        } catch (InterruptedException e) {
-            mTextArea.appendText("\nInterruptedException while writing: " + text);
-        }
+        buffer.append(newLine ? "\n" + text : text);
     }
 }
