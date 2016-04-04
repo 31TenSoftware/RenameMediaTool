@@ -1,6 +1,7 @@
 package com.thirtyonetensoftware.renamemediatool;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextArea;
@@ -16,13 +17,19 @@ public class Controller {
     // ------------------------------------------------------------------------
 
     @FXML
-    private Label mPath;
+    private Label mPathLabel;
+
+    @FXML
+    private Label mChangesLogLabel;
 
     @FXML
     private ProgressBar mProgressBar;
 
     @FXML
     private TextArea mResults;
+
+    @FXML
+    private Button mWriteChangesButton;
 
     private Stage mStage;
 
@@ -38,9 +45,10 @@ public class Controller {
         File file = mDirectoryChooser.showDialog(mStage);
 
         if (file != null) {
-            mPath.setText(file.getPath());
+            mPathLabel.setText(file.getPath());
+            mChangesLogLabel.setText(file.getPath() + File.separator + "changes.csv");
 
-            mTask = new Worker(mResults, file);
+            mTask = new Worker(this, mResults, file);
 
             mProgressBar.progressProperty().unbind();
             mProgressBar.setProgress(0);
@@ -58,6 +66,15 @@ public class Controller {
             mProgressBar.setProgress(0);
             mTask.cancel();
         }
+    }
+
+    public void enableWriteButton(boolean enabled) {
+        mWriteChangesButton.setDisable(!enabled);
+    }
+
+    public void onWriteChangesButtonClick() {
+        // TODO
+        String hello = "hello";
     }
 
     // ------------------------------------------------------------------------

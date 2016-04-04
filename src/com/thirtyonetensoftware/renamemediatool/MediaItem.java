@@ -1,5 +1,6 @@
 package com.thirtyonetensoftware.renamemediatool;
 
+import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 import org.apache.sanselan.ImageReadException;
 import org.apache.sanselan.Sanselan;
 import org.apache.sanselan.common.IImageMetadata;
@@ -11,8 +12,8 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.regex.Pattern;
 
 public class MediaItem implements Comparable<MediaItem> {
 
@@ -26,16 +27,9 @@ public class MediaItem implements Comparable<MediaItem> {
     // Filename format
     private static final SimpleDateFormat mFilenameFormat = new SimpleDateFormat("yyyy-MM-dd_");
 
-    // Potential filename Date/Time format 1
-    private static final SimpleDateFormat mFilenameFormat1 = new SimpleDateFormat("yyyy-MM");
-
-    // Potential filename Date/Time format 2
-    private static final SimpleDateFormat mFilenameFormat2 = new SimpleDateFormat("yyyy-MM-dd");
-
-    // Potential filename Date/Time format 3
-    private static final SimpleDateFormat mFilenameFormat3 = new SimpleDateFormat("yyyyMMdd");
-
     private final File mFile;
+
+    private ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
 
     private Date mOriginalDateTime;
 
@@ -49,8 +43,9 @@ public class MediaItem implements Comparable<MediaItem> {
     // Constructors
     // ------------------------------------------------------------------------
 
-    public MediaItem(File file) {
+    public MediaItem(File file, ArrayList<FilenameTester> testers) {
         mFile = file;
+        mFilenameTesters = testers;
     }
 
     // ------------------------------------------------------------------------
@@ -107,23 +102,18 @@ public class MediaItem implements Comparable<MediaItem> {
         return mNewDateTime != null;
     }
 
-    public String getFilename() {
-        return mNewFilename != null ? mNewFilename : mFile.getName();
-    }
-
     public String getNewFilename() {
         return mNewFilename;
     }
 
-    public boolean setFilename(int count) {
+    public boolean generateNewFilename(int count) {
         String name = mFilenameFormat.format(getDateTime());
 
         name = name + (String.format("%04d", count));
 
-        if (name.equals(getFilename())) {
+        if (name.equals(mFile.getName())) {
             return false;
-        }
-        else {
+        } else {
             mNewFilename = name;
             return true;
         }
@@ -172,33 +162,12 @@ public class MediaItem implements Comparable<MediaItem> {
 
     private Date parseFilenameForDateTime(File file) {
         String filename = file.getName();
-        Date hello;
+        Date date;
 
-        try {
-            hello = mFilenameFormat2.parse(file.getName());
-            if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}.*", filename)) {
-                return mFilenameFormat2.parse(file.getName());
+        for (FilenameTester tester : mFilenameTesters) {
+            if ((date = tester.parseFilenameForDateTime(filename)) != null) {
+                return date;
             }
-        } catch (ParseException e) {
-
-        }
-
-        try {
-            hello = mFilenameFormat3.parse(file.getName());
-            if (Pattern.matches("\\d{8}.*", filename)) {
-                return mFilenameFormat3.parse(file.getName());
-            }
-        } catch (ParseException e) {
-
-        }
-
-        try {
-            hello = mFilenameFormat1.parse(file.getName());
-            if (Pattern.matches("\\d{4}-\\d{2}.*", filename)) {
-                return mFilenameFormat1.parse(file.getName());
-            }
-        } catch (ParseException e) {
-
         }
 
         return null;

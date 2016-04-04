@@ -1,10 +1,13 @@
 package com.thirtyonetensoftware.renamemediatool;
 
+import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonth;
+import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonthDashDay;
+import com.thirtyonetensoftware.renamemediatool.filenametester.YearMonthDay;
+import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 import javafx.concurrent.Task;
 import javafx.scene.control.TextArea;
 
-import java.io.File;
-import java.io.FileFilter;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,13 +30,21 @@ public class Worker extends Task<Integer> {
 
     private final File mFile;
 
+    private File mChangesFile;
+
+    private final ArrayList<MediaItem> mItems = new ArrayList<>();
+
+    private final Controller mController;
+
     private int mFileCount = 0;
 
     private int mMaxProgress = 0;
 
     private int mProgress = 0;
 
-    private MessageConsumer mMessageConsumer;
+    private final ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
+
+    private final MessageConsumer mMessageConsumer;
 
     private final FileFilter mDirectoryFilter = new FileFilter() {
         @Override
@@ -58,13 +69,30 @@ public class Worker extends Task<Integer> {
     // Constructor
     // ------------------------------------------------------------------------
 
-    public Worker(final TextArea textArea, File file) {
+    public Worker(Controller controller, final TextArea textArea, File file) {
+        mController = controller;
         mFile = file;
 
         textArea.clear();
 
         mMessageConsumer = new MessageConsumer(textArea);
         mMessageConsumer.start();
+
+        mChangesFile = new File(mFile.getPath() + File.separator + "changes.csv");
+        try {
+            mChangesFile.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesFile));
+            writer.write("file,newDateTime,newFilename");
+            writer.close();
+        } catch (IOException e) {
+            mMessageConsumer.add("\nCHANGES FILE COULD NOT BE CREATED: " + e.getMessage());
+            mChangesFile = null;
+        }
+
+        mFilenameTesters.clear();
+        mFilenameTesters.add(new YearDashMonthDashDay());
+        mFilenameTesters.add(new YearDashMonth());
+        mFilenameTesters.add(new YearMonthDay());
     }
 
     // ------------------------------------------------------------------------
@@ -73,14 +101,26 @@ public class Worker extends Task<Integer> {
 
     @Override
     protected Integer call() throws Exception {
+        if (mChangesFile == null) {
+            return 1;
+        }
+
         setup(mFile);
 
-        mMessageConsumer.add("\nSTARTING\n");
+        mMessageConsumer.add("\n\nSTARTING\n\nErrors:");
 
         int result = processDirectory(mFile);
 
         updateProgress(mFileCount, mFileCount);
-        mMessageConsumer.add("\n\nFINISHED\n", false);
+        mMessageConsumer.add("\n\nFINISHED");
+
+        if (result == 0) {
+            mMessageConsumer.add("\n\n" + result + " issues found. Click button to write changes.");
+            mController.enableWriteButton(true);
+        } else {
+            mMessageConsumer.add("\n\n" + result + " issues found. Fix errors before writing the changes!");
+            mController.enableWriteButton(false);
+        }
 
         return result;
     }
@@ -90,7 +130,7 @@ public class Worker extends Task<Integer> {
         super.cancelled();
 
         updateProgress(mFileCount, mFileCount);
-        mMessageConsumer.add("\nCANCELLED\n");
+        mMessageConsumer.add("\n\nCANCELLED");
     }
 
     // ------------------------------------------------------------------------
@@ -98,12 +138,12 @@ public class Worker extends Task<Integer> {
     // ------------------------------------------------------------------------
 
     private void setup(File file) {
-        mMessageConsumer.add("Determining number of files... ", false);
+        mMessageConsumer.add("Determining number of files... ");
 
         mFileCount = calculateTotalPhotos(file, 0);
         mMaxProgress = mFileCount * PROGRESS_LOOPS;
 
-        mMessageConsumer.add(String.valueOf(mFileCount), false);
+        mMessageConsumer.add(String.valueOf(mFileCount));
     }
 
     private int calculateTotalPhotos(File file, int max) {
@@ -142,25 +182,25 @@ public class Worker extends Task<Integer> {
 
         File[] files = file.listFiles(mFileFilter);
         if (files == null) {
-            mMessageConsumer.add("\nNO FILES FOUND IN: " + file.getPath() + "\n");
+            mMessageConsumer.add("\nNO FILES FOUND IN: " + file.getPath());
             result++;
             return result;
         }
 
-        ArrayList<MediaItem> items = new ArrayList<>();
+        mItems.clear();
         // for all the images, if we can determine a date/time, add it to the list
         for (File f : files) {
             if (isCancelled()) {
                 return result;
             }
 
-            MediaItem item = new MediaItem(f);
+            MediaItem item = new MediaItem(f, mFilenameTesters);
 
             if (!item.determineDateTime()) {
-                mMessageConsumer.add("\n" + item.getErrorMessage() + "\n");
+                mMessageConsumer.add("\n" + item.getErrorMessage());
                 result++;
             } else {
-                items.add(item);
+                mItems.add(item);
             }
 
             mProgress++;
@@ -168,18 +208,18 @@ public class Worker extends Task<Integer> {
         }
 
         // sort the items (will sort by date/time, then name)
-        Collections.sort(items);
+        Collections.sort(mItems);
 
         // recalculate new dates if date/times are the same for sequential files in the list
-        for (int itemsIndex = 0; itemsIndex < items.size(); itemsIndex++) {
-            if (itemsIndex != items.size() - 1 &&
-                    items.get(itemsIndex).getDateTime().equals(items.get(itemsIndex + 1).getDateTime())) {
-                MediaItem item = items.get(itemsIndex);
+        for (int itemsIndex = 0; itemsIndex < mItems.size(); itemsIndex++) {
+            if (itemsIndex != mItems.size() - 1 &&
+                    mItems.get(itemsIndex).getDateTime().equals(mItems.get(itemsIndex + 1).getDateTime())) {
+                MediaItem item = mItems.get(itemsIndex);
                 ArrayList<MediaItem> itemsWithSameDateTime = new ArrayList<>();
 
-                for (int subItemsIndex = itemsIndex; subItemsIndex < items.size(); subItemsIndex++) {
-                    if (items.get(subItemsIndex).getDateTime().equals(item.getDateTime())) {
-                        itemsWithSameDateTime.add(items.get(subItemsIndex));
+                for (int subItemsIndex = itemsIndex; subItemsIndex < mItems.size(); subItemsIndex++) {
+                    if (mItems.get(subItemsIndex).getDateTime().equals(item.getDateTime())) {
+                        itemsWithSameDateTime.add(mItems.get(subItemsIndex));
                     }
                 }
 
@@ -205,7 +245,7 @@ public class Worker extends Task<Integer> {
         // calculate new filenames for the ones with newDateTime
         Calendar calendar = Calendar.getInstance();
         int count = 0, dayOfYear = -1;
-        for (MediaItem item : items) {
+        for (MediaItem item : mItems) {
             calendar.setTime(item.getDateTime());
 
             if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear) {
@@ -216,13 +256,11 @@ public class Worker extends Task<Integer> {
             }
 
             // if this returns true, then a file rename will occur
-            if (item.setFilename(count)) {
-                // TODO we must test that the name being renamed to doesnt already exist
-                // TODO test this code
+            if (item.generateNewFilename(count)) {
                 File renameFile = new File(item.getNewFilename());
 
                 if (renameFile.exists()) {
-                    mMessageConsumer.add("\nRENAME WILL FAIL: " + item.getFile().getName() + " to -> " + item.getNewFilename() + "\n");
+                    mMessageConsumer.add("\nRENAME WILL FAIL: " + item.getFile().getName() + " to -> " + item.getNewFilename());
                     result++;
                 }
             }
@@ -232,21 +270,29 @@ public class Worker extends Task<Integer> {
         }
 
         // loop through all images, if one will require a new date or filename, print it out
-        for (MediaItem item : items) {
-            if (isCancelled()) {
-                return result;
-            }
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesFile, true));
+            for (MediaItem item : mItems) {
+                if (isCancelled()) {
+                    return result;
+                }
 
-            if (item.hasNewDateTime()) {
-                mMessageConsumer.add(item.getFile().getName() + " ... D->" + mOutputFormat.format(item.getNewDateTime()));
-            }
+                if (item.hasNewDateTime() || item.hasNewFilename()) {
+                    writer.newLine();
+                    writer.append(item.getFile().getPath()).append(",");
+                    if (item.hasNewDateTime()) {
+                        writer.append(mOutputFormat.format(item.getNewDateTime()));
+                    }
+                    writer.append(",").append(item.getNewFilename());
+                }
 
-            if (item.hasNewFilename()) {
-                mMessageConsumer.add(" F-> " + item.getNewFilename(), false);
+                mProgress++;
+                updateProgress(mProgress, mMaxProgress);
             }
-
-            mProgress++;
-            updateProgress(mProgress, mMaxProgress);
+            writer.close();
+        } catch (IOException e) {
+            mMessageConsumer.add("\nCANNOT WRITE CHANGES TO changes.csv: " + e.getMessage());
+            result++;
         }
 
         return result;

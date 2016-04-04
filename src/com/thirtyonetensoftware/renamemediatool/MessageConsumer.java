@@ -9,7 +9,7 @@ public class MessageConsumer extends AnimationTimer {
     // Class Variables
     // ------------------------------------------------------------------------
 
-    private static final int CAPACITY = 75000;
+    private static final int CAPACITY = 150000;
 
     // ------------------------------------------------------------------------
     // Instance Variables
@@ -42,10 +42,6 @@ public class MessageConsumer extends AnimationTimer {
     // ------------------------------------------------------------------------
 
     public void add(String text) {
-        add(text, true);
-    }
-
-    public void add(String text, boolean newLine) {
-        buffer.append(newLine ? "\n" + text : text);
+        buffer.append(text);
     }
 }
