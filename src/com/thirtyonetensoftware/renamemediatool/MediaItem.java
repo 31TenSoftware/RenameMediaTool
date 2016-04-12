@@ -14,6 +14,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 public class MediaItem implements Comparable<MediaItem> {
 
@@ -165,9 +166,21 @@ public class MediaItem implements Comparable<MediaItem> {
         Date date;
 
         for (FilenameTester tester : mFilenameTesters) {
-            if ((date = tester.parseFilenameForDateTime(filename)) != null) {
+            if ((date = parseFilenameForDateTime(tester, filename)) != null) {
                 return date;
             }
+        }
+
+        return null;
+    }
+
+    private Date parseFilenameForDateTime(FilenameTester tester, String filename) {
+        try {
+            if (Pattern.matches(tester.getPattern(), filename)) {
+                return tester.getDateFormat().parse(filename);
+            }
+        } catch (ParseException e) {
+            // do nothing
         }
 
         return null;
