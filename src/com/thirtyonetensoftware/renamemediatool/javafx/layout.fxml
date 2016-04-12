@@ -35,7 +35,7 @@
             <Insets bottom="10.0" top="10.0"/>
         </VBox.margin>
     </Button>
-    <TextArea fx:id="mResults" prefHeight="200.0" prefWidth="200.0" wrapText="true" VBox.vgrow="ALWAYS"/>
+    <TextArea fx:id="mOutputBox" prefHeight="200.0" prefWidth="200.0" wrapText="true" VBox.vgrow="ALWAYS"/>
     <Button disable="true" fx:id="mWriteChangesButton" mnemonicParsing="false" onAction="#onWriteChangesButtonClick"
             prefHeight="35.0" prefWidth="Infinity" text="Write Changes to Files">
         <VBox.margin>

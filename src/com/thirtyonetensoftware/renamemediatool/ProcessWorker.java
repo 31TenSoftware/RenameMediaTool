@@ -3,7 +3,7 @@ package com.thirtyonetensoftware.renamemediatool;
 import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonth;
 import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonthDashDay;
 import com.thirtyonetensoftware.renamemediatool.filenametester.YearMonthDay;
-import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
+import com.thirtyonetensoftware.renamemediatool.support.IFilenameTester;
 import javafx.concurrent.Task;
 import javafx.scene.control.TextArea;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
-public class Worker extends Task<Integer> {
+public class ProcessWorker extends Task<Integer> {
 
     // ------------------------------------------------------------------------
     // Class Variables
@@ -32,7 +32,7 @@ public class Worker extends Task<Integer> {
 
     private File mChangesFile;
 
-    private final ArrayList<MediaItem> mItems = new ArrayList<>();
+    private final ArrayList<MediaItem> mChangeItems;
 
     private final Controller mController;
 
@@ -42,7 +42,7 @@ public class Worker extends Task<Integer> {
 
     private int mProgress = 0;
 
-    private final ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
+    private final ArrayList<IFilenameTester> mFilenameTesters = new ArrayList<>();
 
     private final MessageConsumer mMessageConsumer;
 
@@ -69,9 +69,11 @@ public class Worker extends Task<Integer> {
     // Constructor
     // ------------------------------------------------------------------------
 
-    public Worker(Controller controller, final TextArea textArea, File file) {
+    public ProcessWorker(Controller controller, final TextArea textArea, File file,
+                         ArrayList<MediaItem> changeItems) {
         mController = controller;
         mFile = file;
+        mChangeItems = changeItems;
 
         textArea.clear();
 
@@ -187,7 +189,7 @@ public class Worker extends Task<Integer> {
             return result;
         }
 
-        mItems.clear();
+        ArrayList<MediaItem> items = new ArrayList<>();
         // for all the images, if we can determine a date/time, add it to the list
         for (File f : files) {
             if (isCancelled()) {
@@ -200,7 +202,7 @@ public class Worker extends Task<Integer> {
                 mMessageConsumer.add("\n" + item.getErrorMessage());
                 result++;
             } else {
-                mItems.add(item);
+                items.add(item);
             }
 
             mProgress++;
@@ -208,18 +210,18 @@ public class Worker extends Task<Integer> {
         }
 
         // sort the items (will sort by date/time, then name)
-        Collections.sort(mItems);
+        Collections.sort(items);
 
         // recalculate new dates if date/times are the same for sequential files in the list
-        for (int itemsIndex = 0; itemsIndex < mItems.size(); itemsIndex++) {
-            if (itemsIndex != mItems.size() - 1 &&
-                    mItems.get(itemsIndex).getDateTime().equals(mItems.get(itemsIndex + 1).getDateTime())) {
-                MediaItem item = mItems.get(itemsIndex);
+        for (int itemsIndex = 0; itemsIndex < items.size(); itemsIndex++) {
+            if (itemsIndex != items.size() - 1 &&
+                    items.get(itemsIndex).getDateTime().equals(items.get(itemsIndex + 1).getDateTime())) {
+                MediaItem item = items.get(itemsIndex);
                 ArrayList<MediaItem> itemsWithSameDateTime = new ArrayList<>();
 
-                for (int subItemsIndex = itemsIndex; subItemsIndex < mItems.size(); subItemsIndex++) {
-                    if (mItems.get(subItemsIndex).getDateTime().equals(item.getDateTime())) {
-                        itemsWithSameDateTime.add(mItems.get(subItemsIndex));
+                for (int subItemsIndex = itemsIndex; subItemsIndex < items.size(); subItemsIndex++) {
+                    if (items.get(subItemsIndex).getDateTime().equals(item.getDateTime())) {
+                        itemsWithSameDateTime.add(items.get(subItemsIndex));
                     }
                 }
 
@@ -245,7 +247,7 @@ public class Worker extends Task<Integer> {
         // calculate new filenames for the ones with newDateTime
         Calendar calendar = Calendar.getInstance();
         int count = 0, dayOfYear = -1;
-        for (MediaItem item : mItems) {
+        for (MediaItem item : items) {
             calendar.setTime(item.getDateTime());
 
             if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear) {
@@ -272,7 +274,7 @@ public class Worker extends Task<Integer> {
         // loop through all images, if one will require a new date or filename, print it out
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesFile, true));
-            for (MediaItem item : mItems) {
+            for (MediaItem item : items) {
                 if (isCancelled()) {
                     return result;
                 }
@@ -284,6 +286,8 @@ public class Worker extends Task<Integer> {
                         writer.append(mOutputFormat.format(item.getNewDateTime()));
                     }
                     writer.append(",").append(item.getNewFilename());
+
+                    mChangeItems.add(item);
                 }
 
                 mProgress++;
@@ -297,6 +301,4 @@ public class Worker extends Task<Integer> {
 
         return result;
     }
-
-    // TODO write a method that on a button click writes the new EXIF and filenames to disk
 }

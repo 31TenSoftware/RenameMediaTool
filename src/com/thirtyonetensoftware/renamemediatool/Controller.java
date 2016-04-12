@@ -9,6 +9,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class Controller {
 
@@ -26,7 +27,7 @@ public class Controller {
     private ProgressBar mProgressBar;
 
     @FXML
-    private TextArea mResults;
+    private TextArea mOutputBox;
 
     @FXML
     private Button mWriteChangesButton;
@@ -35,7 +36,9 @@ public class Controller {
 
     private final DirectoryChooser mDirectoryChooser = new DirectoryChooser();
 
-    private Worker mTask;
+    private ProcessWorker mTask;
+
+    private final ArrayList<MediaItem> mChangeItems = new ArrayList<>();
 
     // ------------------------------------------------------------------------
     // Layout Methods
@@ -48,7 +51,7 @@ public class Controller {
             mPathLabel.setText(file.getPath());
             mChangesLogLabel.setText(file.getPath() + File.separator + "changes.csv");
 
-            mTask = new Worker(this, mResults, file);
+            mTask = new ProcessWorker(this, mOutputBox, file, mChangeItems);
 
             mProgressBar.progressProperty().unbind();
             mProgressBar.setProgress(0);
