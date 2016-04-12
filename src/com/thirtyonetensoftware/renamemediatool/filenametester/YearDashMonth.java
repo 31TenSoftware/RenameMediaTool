@@ -1,11 +1,11 @@
 package com.thirtyonetensoftware.renamemediatool.filenametester;
 
-import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
+import com.thirtyonetensoftware.renamemediatool.support.IFilenameTester;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-public class YearDashMonth implements FilenameTester {
+public class YearDashMonth implements IFilenameTester {
 
     private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM");
 

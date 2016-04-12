@@ -1,6 +1,6 @@
 package com.thirtyonetensoftware.renamemediatool;
 
-import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
+import com.thirtyonetensoftware.renamemediatool.support.IFilenameTester;
 import org.apache.sanselan.ImageReadException;
 import org.apache.sanselan.Sanselan;
 import org.apache.sanselan.common.IImageMetadata;
@@ -30,7 +30,7 @@ public class MediaItem implements Comparable<MediaItem> {
 
     private final File mFile;
 
-    private ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
+    private ArrayList<IFilenameTester> mFilenameTesters = new ArrayList<>();
 
     private Date mOriginalDateTime;
 
@@ -44,7 +44,7 @@ public class MediaItem implements Comparable<MediaItem> {
     // Constructors
     // ------------------------------------------------------------------------
 
-    public MediaItem(File file, ArrayList<FilenameTester> testers) {
+    public MediaItem(File file, ArrayList<IFilenameTester> testers) {
         mFile = file;
         mFilenameTesters = testers;
     }
@@ -165,7 +165,7 @@ public class MediaItem implements Comparable<MediaItem> {
         String filename = file.getName();
         Date date;
 
-        for (FilenameTester tester : mFilenameTesters) {
+        for (IFilenameTester tester : mFilenameTesters) {
             if ((date = parseFilenameForDateTime(tester, filename)) != null) {
                 return date;
             }
@@ -174,7 +174,7 @@ public class MediaItem implements Comparable<MediaItem> {
         return null;
     }
 
-    private Date parseFilenameForDateTime(FilenameTester tester, String filename) {
+    private Date parseFilenameForDateTime(IFilenameTester tester, String filename) {
         try {
             if (Pattern.matches(tester.getPattern(), filename)) {
                 return tester.getDateFormat().parse(filename);
