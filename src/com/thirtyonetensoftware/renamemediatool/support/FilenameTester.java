@@ -12,8 +12,7 @@ public abstract class FilenameTester {
 
     protected abstract DateFormat getDateFormat();
 
-    protected Calendar adjustDate(Calendar calendar) {
-        return calendar;
+    protected void adjustDate(Calendar calendar) {
     }
 
     public final Date parseFilenameForDateTime(String filename) {
