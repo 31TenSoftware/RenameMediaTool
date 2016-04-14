@@ -69,8 +69,7 @@ public class ProcessWorker extends Task<Integer> {
     // Constructor
     // ------------------------------------------------------------------------
 
-    public ProcessWorker(Controller controller, final TextArea textArea, File file,
-                         ArrayList<MediaItem> changeItems) {
+    public ProcessWorker(Controller controller, TextArea textArea, File file, ArrayList<MediaItem> changeItems) {
         mController = controller;
         mFile = file;
         mChangeItems = changeItems;
