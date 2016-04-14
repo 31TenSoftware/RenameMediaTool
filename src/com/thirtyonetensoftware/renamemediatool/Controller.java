@@ -76,8 +76,13 @@ public class Controller {
     }
 
     public void onWriteChangesButtonClick() {
-        // TODO
-        String hello = "hello";
+        CommitWorker committer = new CommitWorker(mOutputBox, mChangeItems);
+
+        mOutputBox.appendText("\n\nCOMMITTING CHANGES... DO NOT CLOSE PROGRAM!");
+
+        Thread mThread = new Thread(committer);
+        mThread.setDaemon(true);
+        mThread.start();
     }
 
     // ------------------------------------------------------------------------
