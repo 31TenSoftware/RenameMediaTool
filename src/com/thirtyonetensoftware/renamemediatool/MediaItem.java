@@ -1,6 +1,6 @@
 package com.thirtyonetensoftware.renamemediatool;
 
-import com.thirtyonetensoftware.renamemediatool.support.IFilenameTester;
+import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 import org.apache.sanselan.ImageReadException;
 import org.apache.sanselan.ImageWriteException;
 import org.apache.sanselan.Sanselan;
@@ -25,7 +25,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.regex.Pattern;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -43,7 +42,7 @@ public class MediaItem implements Comparable<MediaItem> {
 
     private final File mFile;
 
-    private ArrayList<IFilenameTester> mFilenameTesters = new ArrayList<>();
+    private ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
 
     private Date mOriginalDateTime;
 
@@ -57,7 +56,7 @@ public class MediaItem implements Comparable<MediaItem> {
     // Constructors
     // ------------------------------------------------------------------------
 
-    public MediaItem(File file, ArrayList<IFilenameTester> testers) {
+    public MediaItem(File file, ArrayList<FilenameTester> testers) {
         mFile = file;
         mFilenameTesters = testers;
     }
@@ -220,22 +219,10 @@ public class MediaItem implements Comparable<MediaItem> {
         String filename = file.getName();
         Date date;
 
-        for (IFilenameTester tester : mFilenameTesters) {
-            if ((date = parseFilenameForDateTime(tester, filename)) != null) {
+        for (FilenameTester tester : mFilenameTesters) {
+            if ((date = tester.parseFilenameForDateTime(filename)) != null) {
                 return date;
             }
-        }
-
-        return null;
-    }
-
-    private Date parseFilenameForDateTime(IFilenameTester tester, String filename) {
-        try {
-            if (Pattern.matches(tester.getPattern(), filename)) {
-                return tester.getDateFormat().parse(filename);
-            }
-        } catch (ParseException e) {
-            // do nothing
         }
 
         return null;

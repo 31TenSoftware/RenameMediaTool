@@ -1,21 +1,28 @@
 package com.thirtyonetensoftware.renamemediatool.filenametester;
 
-import com.thirtyonetensoftware.renamemediatool.support.IFilenameTester;
+import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
-public class YearMonthDay implements IFilenameTester {
+public class YearMonthDay extends FilenameTester {
 
     private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyyMMdd");
 
     @Override
-    public String getPattern() {
+    protected String getPattern() {
         return "\\d{8}.*";
     }
 
     @Override
-    public DateFormat getDateFormat() {
+    protected DateFormat getDateFormat() {
         return mDateFormat;
+    }
+
+    @Override
+    protected Calendar adjustDate(Calendar calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 12);
+        return calendar;
     }
 }

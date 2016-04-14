@@ -3,7 +3,7 @@ package com.thirtyonetensoftware.renamemediatool;
 import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonth;
 import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonthDashDay;
 import com.thirtyonetensoftware.renamemediatool.filenametester.YearMonthDay;
-import com.thirtyonetensoftware.renamemediatool.support.IFilenameTester;
+import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 import javafx.concurrent.Task;
 import javafx.scene.control.TextArea;
 
@@ -42,7 +42,7 @@ public class ProcessWorker extends Task<Integer> {
 
     private int mProgress = 0;
 
-    private final ArrayList<IFilenameTester> mFilenameTesters = new ArrayList<>();
+    private final ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
 
     private final MessageConsumer mMessageConsumer;
 
