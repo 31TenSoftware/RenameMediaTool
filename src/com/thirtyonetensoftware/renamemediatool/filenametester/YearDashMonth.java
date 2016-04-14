@@ -21,8 +21,7 @@ public class YearDashMonth extends FilenameTester {
     }
 
     @Override
-    protected Calendar adjustDate(Calendar calendar) {
+    protected void adjustDate(Calendar calendar) {
         calendar.set(Calendar.HOUR_OF_DAY, 12);
-        return calendar;
     }
 }
