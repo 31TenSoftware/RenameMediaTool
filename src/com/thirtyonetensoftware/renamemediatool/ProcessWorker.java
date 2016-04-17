@@ -139,12 +139,10 @@ public class ProcessWorker extends Task<Integer> {
     // ------------------------------------------------------------------------
 
     private void setup(File file) {
-        mMessageConsumer.add("Determining number of files... ");
-
         mFileCount = calculateTotalPhotos(file, 0);
         mMaxProgress = mFileCount * PROGRESS_LOOPS;
 
-        mMessageConsumer.add(String.valueOf(mFileCount));
+        mMessageConsumer.add("Number of files: " + String.valueOf(mFileCount));
     }
 
     private int calculateTotalPhotos(File file, int max) {
