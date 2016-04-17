@@ -21,7 +21,9 @@ public class ProcessWorker extends Task<Integer> {
 
     private static final int PROGRESS_LOOPS = 4;
 
-    // EXIF Date/Time format
+    private static final int SAME_TIME_SECONDS = 1;
+
+    // changes.csv display format
     private static final SimpleDateFormat mOutputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     // ------------------------------------------------------------------------
@@ -226,10 +228,11 @@ public class ProcessWorker extends Task<Integer> {
 
                 int index = 0;
                 // get the date, add 5 seconds * index and set the date
+                // only do 1 second due to issue #1
                 for (MediaItem itemWithSameDateTime : itemsWithSameDateTime) {
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTime(itemWithSameDateTime.getDateTime());
-                    calendar.add(Calendar.SECOND, index * 5);
+                    calendar.add(Calendar.SECOND, index * SAME_TIME_SECONDS);
 
                     itemWithSameDateTime.setDateTime(calendar.getTime());
 
