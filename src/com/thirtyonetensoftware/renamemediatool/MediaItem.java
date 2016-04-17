@@ -10,6 +10,7 @@ import org.apache.sanselan.formats.jpeg.exifRewrite.ExifRewriter;
 import org.apache.sanselan.formats.tiff.TiffField;
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.ExifTagConstants;
+import org.apache.sanselan.formats.tiff.constants.TiffConstants;
 import org.apache.sanselan.formats.tiff.write.TiffOutputDirectory;
 import org.apache.sanselan.formats.tiff.write.TiffOutputField;
 import org.apache.sanselan.formats.tiff.write.TiffOutputSet;
@@ -149,6 +150,10 @@ public class MediaItem implements Comparable<MediaItem> {
                     JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
                     // read the date/time tag out
                     dateTimeValue = jpegMetadata.findEXIFValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+
+                    if (dateTimeValue == null) {
+                        dateTimeValue = jpegMetadata.findEXIFValue(ExifTagConstants.EXIF_TAG_CREATE_DATE);
+                    }
                 }
 
                 // if there's no date/time value, try to determine one from the file's name
@@ -192,11 +197,22 @@ public class MediaItem implements Comparable<MediaItem> {
                 }
             }
 
+            String newDateTimeValue = mFormat.format(getNewDateTime());
+
+            TiffOutputField new_date_time_orig_field = new TiffOutputField(TiffConstants.EXIF_TAG_DATE_TIME_ORIGINAL,
+                    TiffConstants.FIELD_TYPE_ASCII,
+                    newDateTimeValue.length(),
+                    newDateTimeValue.getBytes());
+            TiffOutputField new_create_date_field = new TiffOutputField(TiffConstants.EXIF_TAG_CREATE_DATE,
+                    TiffConstants.FIELD_TYPE_ASCII,
+                    newDateTimeValue.length(),
+                    newDateTimeValue.getBytes());
+
             TiffOutputDirectory exif = outputSet.getOrCreateExifDirectory();
             exif.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
-            TiffOutputField field = TiffOutputField.create(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL,
-                    outputSet.byteOrder, mFormat.format(getNewDateTime()));
-            exif.add(field);
+            exif.removeField(ExifTagConstants.EXIF_TAG_CREATE_DATE);
+            exif.add(new_date_time_orig_field);
+            exif.add(new_create_date_field);
 
             saveExifToFile(mFile, outputSet);
         }
