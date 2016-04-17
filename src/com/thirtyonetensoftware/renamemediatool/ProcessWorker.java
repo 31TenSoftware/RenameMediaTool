@@ -281,10 +281,16 @@ public class ProcessWorker extends Task<Integer> {
                 if (item.hasNewDateTime() || item.hasNewFilename()) {
                     writer.newLine();
                     writer.append(item.getFile().getPath()).append(",");
+
                     if (item.hasNewDateTime()) {
-                        writer.append(mOutputFormat.format(item.getNewDateTime()));
+                        writer.append(mOutputFormat.format(item.getNewDateTime())).append(",");
+                    } else {
+                        writer.append(",");
                     }
-                    writer.append(",").append(item.getNewFilename());
+
+                    if (item.hasNewFilename()) {
+                        writer.append(item.getNewFilename());
+                    }
 
                     mChangeItems.add(item);
                 }
