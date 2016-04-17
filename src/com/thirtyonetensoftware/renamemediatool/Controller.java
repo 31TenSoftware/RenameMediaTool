@@ -64,9 +64,10 @@ public class Controller {
     }
 
     public void onStopButtonClick() {
+        mProgressBar.progressProperty().unbind();
+        mProgressBar.setProgress(0);
+
         if (mTask != null) {
-            mProgressBar.progressProperty().unbind();
-            mProgressBar.setProgress(0);
             mTask.cancel();
         }
     }
@@ -79,6 +80,10 @@ public class Controller {
         CommitWorker committer = new CommitWorker(mOutputBox, mChangeItems);
 
         mOutputBox.appendText("\n\nCOMMITTING CHANGES... DO NOT CLOSE PROGRAM!");
+
+        mProgressBar.progressProperty().unbind();
+        mProgressBar.setProgress(0);
+        mProgressBar.progressProperty().bind(committer.progressProperty());
 
         Thread mThread = new Thread(committer);
         mThread.setDaemon(true);
