@@ -11,6 +11,12 @@ import java.util.ArrayList;
 public class CommitWorker extends Task<Integer> {
 
     // ------------------------------------------------------------------------
+    // Class Variables
+    // ------------------------------------------------------------------------
+
+    private static final int PROGRESS_LOOPS = 2;
+
+    // ------------------------------------------------------------------------
     // Instance Variables
     // ------------------------------------------------------------------------
 
@@ -18,12 +24,18 @@ public class CommitWorker extends Task<Integer> {
 
     private final MessageConsumer mMessageConsumer;
 
+    private final int mTotalIterations;
+
+    private int mIterations;
+
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
 
     public CommitWorker(TextArea textArea, ArrayList<MediaItem> changeItems) {
         mChangeItems = changeItems;
+
+        mTotalIterations = mChangeItems.size() * PROGRESS_LOOPS;
 
         mMessageConsumer = new MessageConsumer(textArea);
         mMessageConsumer.start();
@@ -50,6 +62,9 @@ public class CommitWorker extends Task<Integer> {
 
 //        result += commitNewFilenames();
 
+        updateProgress(mTotalIterations, mTotalIterations);
+        mMessageConsumer.add("\n\nFINISHED. " + result + " issues.");
+
         return result;
     }
 
@@ -69,10 +84,13 @@ public class CommitWorker extends Task<Integer> {
                 try {
                     item.commitNewDateTime();
                 } catch (IOException | ImageReadException | ImageWriteException e) {
-                    mMessageConsumer.add(e.getMessage());
+                    mMessageConsumer.add("\n" + e);
                     result++;
                 }
             }
+
+            mIterations++;
+            updateProgress(mIterations, mTotalIterations);
         }
 
         return result;
@@ -90,10 +108,13 @@ public class CommitWorker extends Task<Integer> {
                 try {
                     item.commitNewFilename();
                 } catch (Exception e) {
-                    mMessageConsumer.add(e.getMessage());
+                    mMessageConsumer.add("\n" + e);
                     result++;
                 }
             }
+
+            mIterations++;
+            updateProgress(mIterations, mTotalIterations);
         }
 
         return result;
