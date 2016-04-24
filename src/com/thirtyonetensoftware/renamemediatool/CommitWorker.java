@@ -37,6 +37,8 @@ public class CommitWorker extends Task<Integer> {
 
         mTotalIterations = mChangeItems.size() * PROGRESS_LOOPS;
 
+        updateProgress(0, mTotalIterations);
+
         mMessageConsumer = new MessageConsumer(textArea);
         mMessageConsumer.start();
     }
@@ -60,7 +62,7 @@ public class CommitWorker extends Task<Integer> {
 
         mMessageConsumer.add("\n\nCOMMITTING NEW FILENAMES:");
 
-//        result += commitNewFilenames();
+        result += commitNewFilenames();
 
         updateProgress(mTotalIterations, mTotalIterations);
         mMessageConsumer.add("\n\nFINISHED. " + result + " issues.");
