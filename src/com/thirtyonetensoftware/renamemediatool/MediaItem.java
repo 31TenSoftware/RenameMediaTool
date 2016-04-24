@@ -82,7 +82,7 @@ public class MediaItem implements Comparable<MediaItem> {
 
         // if dates are the same, compare by filename
         if (distance == 0) {
-            distance = mFile.getName().compareTo(item.getFile().getName());
+            distance = mFile.getName().compareToIgnoreCase(item.getFile().getName());
         }
 
         return distance;
