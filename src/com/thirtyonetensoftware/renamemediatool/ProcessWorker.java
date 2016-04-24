@@ -21,6 +21,8 @@ public class ProcessWorker extends Task<Integer> {
 
     private static final int PROGRESS_LOOPS = 4;
 
+    private static final int SAME_TIME_SECONDS = 1;
+
     // changes.csv display format
     private static final SimpleDateFormat mOutputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -209,8 +211,7 @@ public class ProcessWorker extends Task<Integer> {
         // sort the items (will sort by date/time, then name)
         Collections.sort(items);
 
-        // we used to recalculate new dates if date/times are the same for sequential files in the list
-        // now we just add an extra count to the end of the filename
+        // recalculate new dates if date/times are the same for sequential files in the list
         for (int itemsIndex = 0; itemsIndex < items.size(); itemsIndex++) {
             if (itemsIndex != items.size() - 1 &&
                     items.get(itemsIndex).getDateTime().equals(items.get(itemsIndex + 1).getDateTime())) {
@@ -226,14 +227,17 @@ public class ProcessWorker extends Task<Integer> {
                 Collections.sort(itemsWithSameDateTime);
 
                 int index = 0;
-                // set the count on each MediaItem that have the same date/time
+                // get the date, add 5 seconds * index and set the date
+                // only do 1 second due to issue #1
                 for (MediaItem itemWithSameDateTime : itemsWithSameDateTime) {
-                    index += 1;
-                    itemWithSameDateTime.setMatchingCount(index);
-                }
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(itemWithSameDateTime.getDateTime());
+                    calendar.add(Calendar.SECOND, index * SAME_TIME_SECONDS);
 
-                // important to move the itemsIndex past this grouping of matching date/times
-                itemsIndex += itemsWithSameDateTime.size();
+                    itemWithSameDateTime.setDateTime(calendar.getTime());
+
+                    index++;
+                }
             }
 
             mProgress++;
@@ -242,7 +246,7 @@ public class ProcessWorker extends Task<Integer> {
 
         // calculate new filenames for the ones with newDateTime
         Calendar calendar = Calendar.getInstance();
-        int count = 1, dayOfYear = -1;
+        int count = 0, dayOfYear = -1;
         for (MediaItem item : items) {
             calendar.setTime(item.getDateTime());
 
@@ -250,7 +254,7 @@ public class ProcessWorker extends Task<Integer> {
                 count++;
             } else {
                 dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-                count = 1;
+                count = 0;
             }
 
             // if this returns true, then a file rename will occur

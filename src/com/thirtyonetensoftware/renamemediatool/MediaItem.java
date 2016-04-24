@@ -51,8 +51,6 @@ public class MediaItem implements Comparable<MediaItem> {
 
     private String mNewFilename;
 
-    private int mMatchingCount = -1;
-
     private String mErrorMessage;
 
     // ------------------------------------------------------------------------
@@ -106,6 +104,10 @@ public class MediaItem implements Comparable<MediaItem> {
         return mNewDateTime != null ? mNewDateTime : mOriginalDateTime;
     }
 
+    public void setDateTime(Date dateTime) {
+        mNewDateTime = dateTime;
+    }
+
     public Date getNewDateTime() {
         return mNewDateTime;
     }
@@ -123,10 +125,6 @@ public class MediaItem implements Comparable<MediaItem> {
 
         name = name + (String.format("%04d", count));
 
-        if (mMatchingCount > 0) {
-            name = name + "_" + (String.format("%02d", mMatchingCount));
-        }
-
         if (name.equals(mFile.getName())) {
             return false;
         } else {
@@ -137,10 +135,6 @@ public class MediaItem implements Comparable<MediaItem> {
 
     public boolean hasNewFilename() {
         return mNewFilename != null;
-    }
-
-    public void setMatchingCount(int count) {
-        mMatchingCount = count;
     }
 
     public boolean determineDateTime() {
