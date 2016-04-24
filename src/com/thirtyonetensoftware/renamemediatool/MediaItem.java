@@ -121,11 +121,14 @@ public class MediaItem implements Comparable<MediaItem> {
     }
 
     public boolean generateNewFilename(int count) {
-        String name = mFilenameFormat.format(getDateTime());
+        String currentName = mFile.getName();
+        int dot = currentName.lastIndexOf(".");
 
-        name = name + (String.format("%04d", count));
+        String name = mFilenameFormat.format(getDateTime()) +
+                (String.format("%04d", count)) +
+                currentName.substring(dot).toLowerCase();
 
-        if (name.equals(mFile.getName())) {
+        if (name.equals(currentName)) {
             return false;
         } else {
             mNewFilename = name;
