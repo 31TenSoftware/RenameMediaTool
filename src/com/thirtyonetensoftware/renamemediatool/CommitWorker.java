@@ -14,7 +14,7 @@ public class CommitWorker extends Task<Integer> {
     // Class Variables
     // ------------------------------------------------------------------------
 
-    private static final int PROGRESS_LOOPS = 2;
+    private static final int PROGRESS_LOOPS = 3;
 
     // ------------------------------------------------------------------------
     // Instance Variables
@@ -62,6 +62,8 @@ public class CommitWorker extends Task<Integer> {
 
         mMessageConsumer.add("\n\nCOMMITTING NEW FILENAMES:");
 
+        result += commitTempFilenames();
+
         result += commitNewFilenames();
 
         updateProgress(mTotalIterations, mTotalIterations);
@@ -86,6 +88,34 @@ public class CommitWorker extends Task<Integer> {
                 try {
                     item.commitNewDateTime();
                 } catch (IOException | ImageReadException | ImageWriteException e) {
+                    mMessageConsumer.add("\n" + e);
+                    result++;
+                }
+            }
+
+            mIterations++;
+            updateProgress(mIterations, mTotalIterations);
+        }
+
+        return result;
+    }
+
+    /*
+     * it's necessary to first rename all the files to temporary names to avoid conflicts and overwritings
+     * when writing the new names.
+     */
+    private int commitTempFilenames() {
+        int result = 0;
+
+        for (MediaItem item : mChangeItems) {
+            if (isCancelled()) {
+                return result;
+            }
+
+            if (item.hasNewFilename()) {
+                try {
+                    item.commitTempFilename();
+                } catch (Exception e) {
                     mMessageConsumer.add("\n" + e);
                     result++;
                 }

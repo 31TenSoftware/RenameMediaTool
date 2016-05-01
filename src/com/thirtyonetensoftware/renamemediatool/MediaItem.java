@@ -19,15 +19,13 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import java.util.UUID;
 
 public class MediaItem implements Comparable<MediaItem> {
 
@@ -41,7 +39,7 @@ public class MediaItem implements Comparable<MediaItem> {
     // Filename format
     private static final SimpleDateFormat mFilenameFormat = new SimpleDateFormat("yyyy-MM-dd_");
 
-    private final File mFile;
+    private File mFile;
 
     private ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
 
@@ -50,6 +48,8 @@ public class MediaItem implements Comparable<MediaItem> {
     private Date mNewDateTime;
 
     private String mNewFilename;
+
+    private String mTempName;
 
     private String mErrorMessage;
 
@@ -82,7 +82,7 @@ public class MediaItem implements Comparable<MediaItem> {
 
         // if dates are the same, compare by filename
         if (distance == 0) {
-            distance = mFile.getName().compareToIgnoreCase(item.getFile().getName());
+            distance = mFile.getName().compareToIgnoreCase(mFile.getName());
         }
 
         return distance;
@@ -94,10 +94,6 @@ public class MediaItem implements Comparable<MediaItem> {
 
     public String getErrorMessage() {
         return mErrorMessage;
-    }
-
-    public File getFile() {
-        return mFile;
     }
 
     public Date getDateTime() {
@@ -114,30 +110,6 @@ public class MediaItem implements Comparable<MediaItem> {
 
     public boolean hasNewDateTime() {
         return mNewDateTime != null;
-    }
-
-    public String getNewFilename() {
-        return mNewFilename;
-    }
-
-    public boolean generateNewFilename(int count) {
-        String currentName = mFile.getName();
-        int dot = currentName.lastIndexOf(".");
-
-        String name = mFilenameFormat.format(getDateTime()) +
-                (String.format("%04d", count)) +
-                currentName.substring(dot).toLowerCase();
-
-        if (name.equals(currentName)) {
-            return false;
-        } else {
-            mNewFilename = name;
-            return true;
-        }
-    }
-
-    public boolean hasNewFilename() {
-        return mNewFilename != null;
     }
 
     public boolean determineDateTime() {
@@ -225,9 +197,52 @@ public class MediaItem implements Comparable<MediaItem> {
         }
     }
 
-    public void commitNewFilename() throws IOException {
+    public String getNewFilename() {
+        return mNewFilename;
+    }
+
+    public boolean hasNewFilename() {
+        return mNewFilename != null;
+    }
+
+    public void generateNewFilename(int count) {
+        String currentName = mFile.getName();
+
+        int dot = currentName.lastIndexOf(".");
+        String extension = currentName.substring(dot).toLowerCase();
+
+        String newBaseFilename = mFilenameFormat.format(getDateTime()) +
+                (String.format("%04d", count));
+
+        String newFilename = newBaseFilename + extension;
+
+        if (!newFilename.equals(currentName)) {
+            mTempName = newBaseFilename + UUID.randomUUID() + extension + ".temp";
+
+            mNewFilename = newFilename;
+        }
+    }
+
+    public void commitTempFilename() {
         Path path = Paths.get(mFile.toURI());
-        Files.move(path, path.resolveSibling(getNewFilename()), REPLACE_EXISTING);
+        File tempFile = path.resolveSibling(mTempName).toFile();
+
+        mFile.renameTo(tempFile);
+        // update mFile to point to the new File
+        mFile = tempFile;
+    }
+
+    public void commitNewFilename() {
+        Path path = Paths.get(mFile.toURI());
+        File newFile = path.resolveSibling(mNewFilename).toFile();
+
+        mFile.renameTo(newFile);
+        // update mFile to point to the new File
+        mFile = newFile;
+    }
+
+    public String getFilepath() {
+        return mFile == null ? null : mFile.getPath();
     }
 
     // ------------------------------------------------------------------------
