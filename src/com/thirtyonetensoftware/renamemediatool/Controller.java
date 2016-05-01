@@ -1,14 +1,14 @@
 package com.thirtyonetensoftware.renamemediatool;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Controller {
@@ -22,6 +22,9 @@ public class Controller {
 
     @FXML
     private Label mChangesLogLabel;
+
+    @FXML
+    private CheckBox mStaggerDateTimes;
 
     @FXML
     private ProgressBar mProgressBar;
@@ -40,6 +43,8 @@ public class Controller {
 
     private final ArrayList<MediaItem> mChangeItems = new ArrayList<>();
 
+    private File mChangesLog;
+
     // ------------------------------------------------------------------------
     // Layout Methods
     // ------------------------------------------------------------------------
@@ -49,9 +54,21 @@ public class Controller {
 
         if (file != null) {
             mPathLabel.setText(file.getPath());
-            mChangesLogLabel.setText(file.getPath() + File.separator + "changes.csv");
 
-            mTask = new ProcessWorker(this, mOutputBox, file, mChangeItems);
+            mChangesLog = new File(file.getPath() + File.separator + "changes.csv");
+            try {
+                mChangesLog.createNewFile();
+                BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesLog));
+                writer.write("file,newDateTime,newFilename");
+                writer.close();
+
+                mChangesLogLabel.setText(mChangesLog.getPath());
+            } catch (IOException e) {
+                mOutputBox.appendText("\nCHANGES FILE COULD NOT BE CREATED: " + e.getMessage());
+                return;
+            }
+
+            mTask = new ProcessWorker(this, mOutputBox, file, mStaggerDateTimes.isSelected(), mChangesLog, mChangeItems);
 
             mProgressBar.progressProperty().unbind();
             mProgressBar.setProgress(0);
@@ -69,6 +86,10 @@ public class Controller {
 
         if (mTask != null) {
             mTask.cancel();
+        }
+
+        if (mChangesLog != null && mChangesLog.exists()) {
+            mChangesLog.delete();
         }
     }
 
@@ -88,6 +109,10 @@ public class Controller {
         Thread mThread = new Thread(committer);
         mThread.setDaemon(true);
         mThread.start();
+
+        if (mChangesLog != null && mChangesLog.exists()) {
+            mChangesLog.delete();
+        }
     }
 
     // ------------------------------------------------------------------------

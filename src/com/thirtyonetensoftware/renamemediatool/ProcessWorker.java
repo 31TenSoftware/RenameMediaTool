@@ -19,8 +19,6 @@ public class ProcessWorker extends Task<Integer> {
     // Class Variables
     // ------------------------------------------------------------------------
 
-    private static final int PROGRESS_LOOPS = 4;
-
     private static final int SAME_TIME_SECONDS = 1;
 
     // changes.csv display format
@@ -32,13 +30,17 @@ public class ProcessWorker extends Task<Integer> {
 
     private final File mFile;
 
-    private File mChangesFile;
+    private final boolean mStaggerDateTimes;
+
+    private final File mChangesLog;
 
     private final ArrayList<MediaItem> mChangeItems;
 
     private final Controller mController;
 
     private int mFileCount = 0;
+
+    private final int PROGRESS_LOOPS;
 
     private int mMaxProgress = 0;
 
@@ -62,8 +64,7 @@ public class ProcessWorker extends Task<Integer> {
             return path.endsWith(".jpeg") ||
                     path.endsWith(".jpg") ||
                     path.endsWith(".png") ||
-                    path.endsWith(".bmp") ||
-                    file.isDirectory();
+                    path.endsWith(".bmp");
         }
     };
 
@@ -71,26 +72,21 @@ public class ProcessWorker extends Task<Integer> {
     // Constructor
     // ------------------------------------------------------------------------
 
-    public ProcessWorker(Controller controller, TextArea textArea, File file, ArrayList<MediaItem> changeItems) {
+    public ProcessWorker(Controller controller, TextArea textArea, File file, boolean staggerDateTimes,
+                         File changesLog, ArrayList<MediaItem> changeItems) {
         mController = controller;
         mFile = file;
+        mChangesLog = changesLog;
+
+        mStaggerDateTimes = staggerDateTimes;
+        PROGRESS_LOOPS = mStaggerDateTimes ? 4 : 3;
+
         mChangeItems = changeItems;
 
         textArea.clear();
 
         mMessageConsumer = new MessageConsumer(textArea);
         mMessageConsumer.start();
-
-        mChangesFile = new File(mFile.getPath() + File.separator + "changes.csv");
-        try {
-            mChangesFile.createNewFile();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesFile));
-            writer.write("file,newDateTime,newFilename");
-            writer.close();
-        } catch (IOException e) {
-            mMessageConsumer.add("\nCHANGES FILE COULD NOT BE CREATED: " + e.getMessage());
-            mChangesFile = null;
-        }
 
         mFilenameTesters.clear();
         mFilenameTesters.add(new YearDashMonthDashDay());
@@ -104,10 +100,6 @@ public class ProcessWorker extends Task<Integer> {
 
     @Override
     protected Integer call() throws Exception {
-        if (mChangesFile == null) {
-            return 1;
-        }
-
         setup(mFile);
 
         mMessageConsumer.add("\n\nSTARTING\n\nErrors:");
@@ -148,15 +140,15 @@ public class ProcessWorker extends Task<Integer> {
     }
 
     private int calculateTotalPhotos(File file, int max) {
-        File[] photosAndFolders = file.listFiles(mFileFilter);
-        if (photosAndFolders != null) {
-            max += photosAndFolders.length;
+        File[] photos = file.listFiles(mFileFilter);
+        if (photos != null) {
+            max += photos.length;
+        }
 
-            for (File f : photosAndFolders) {
-                if (f.isDirectory()) {
-                    max--;
-                    max = calculateTotalPhotos(f, max);
-                }
+        File[] directories = file.listFiles(mDirectoryFilter);
+        if (directories != null) {
+            for (File directory : directories) {
+                max = calculateTotalPhotos(directory, max);
             }
         }
 
@@ -164,13 +156,15 @@ public class ProcessWorker extends Task<Integer> {
     }
 
     private int processDirectory(File file) {
-        File[] files = file.listFiles(mDirectoryFilter);
         int result = 0;
 
+        // process any images in the current directory
+        result += processFiles(file);
+
+        // process any directories in the current directory
+        File[] files = file.listFiles(mDirectoryFilter);
         if (files != null) {
             for (File f : files) {
-                result += processFiles(f);
-
                 result += processDirectory(f);
             }
         }
@@ -211,7 +205,69 @@ public class ProcessWorker extends Task<Integer> {
         // sort the items (will sort by date/time, then name)
         Collections.sort(items);
 
-        // recalculate new dates if date/times are the same for sequential files in the list
+        if (mStaggerDateTimes) {
+            staggerDateTimes(items);
+        }
+
+        // calculate new filenames for the ones with newDateTime
+        Calendar calendar = Calendar.getInstance();
+        int count = 1, dayOfYear = -1;
+        for (MediaItem item : items) {
+            calendar.setTime(item.getDateTime());
+
+            if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear) {
+                count++;
+            } else {
+                dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+                count = 1;
+            }
+
+            // if this returns true, then a file rename will occur
+            item.generateNewFilename(count);
+
+            mProgress++;
+            updateProgress(mProgress, mMaxProgress);
+        }
+
+        // loop through all images, if one will require a new date or filename, print it out
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesLog, true));
+            for (MediaItem item : items) {
+                if (isCancelled()) {
+                    return result;
+                }
+
+                if (item.hasNewDateTime() || item.hasNewFilename()) {
+                    writer.newLine();
+                    writer.append(item.getFilepath()).append(",");
+
+                    if (item.hasNewDateTime()) {
+                        writer.append(mOutputFormat.format(item.getNewDateTime())).append(",");
+                    } else {
+                        writer.append(",");
+                    }
+
+                    if (item.hasNewFilename()) {
+                        writer.append(item.getNewFilename());
+                    }
+
+                    mChangeItems.add(item);
+                }
+
+                mProgress++;
+                updateProgress(mProgress, mMaxProgress);
+            }
+            writer.close();
+        } catch (IOException e) {
+            mMessageConsumer.add("\nCANNOT WRITE CHANGES TO changes.csv: " + e.getMessage());
+            result++;
+        }
+
+        return result;
+    }
+
+    // recalculate new dates if date/times are the same for sequential files in the list
+    private void staggerDateTimes(ArrayList<MediaItem> items) {
         for (int itemsIndex = 0; itemsIndex < items.size(); itemsIndex++) {
             if (itemsIndex != items.size() - 1 &&
                     items.get(itemsIndex).getDateTime().equals(items.get(itemsIndex + 1).getDateTime())) {
@@ -243,68 +299,5 @@ public class ProcessWorker extends Task<Integer> {
             mProgress++;
             updateProgress(mProgress, mMaxProgress);
         }
-
-        // calculate new filenames for the ones with newDateTime
-        Calendar calendar = Calendar.getInstance();
-        int count = 0, dayOfYear = -1;
-        for (MediaItem item : items) {
-            calendar.setTime(item.getDateTime());
-
-            if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear) {
-                count++;
-            } else {
-                dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-                count = 0;
-            }
-
-            // if this returns true, then a file rename will occur
-            if (item.generateNewFilename(count)) {
-                File renameFile = new File(item.getNewFilename());
-
-                if (renameFile.exists()) {
-                    mMessageConsumer.add("\nRENAME WILL FAIL: " + item.getFile().getName() + " to -> " + item.getNewFilename());
-                    result++;
-                }
-            }
-
-            mProgress++;
-            updateProgress(mProgress, mMaxProgress);
-        }
-
-        // loop through all images, if one will require a new date or filename, print it out
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesFile, true));
-            for (MediaItem item : items) {
-                if (isCancelled()) {
-                    return result;
-                }
-
-                if (item.hasNewDateTime() || item.hasNewFilename()) {
-                    writer.newLine();
-                    writer.append(item.getFile().getPath()).append(",");
-
-                    if (item.hasNewDateTime()) {
-                        writer.append(mOutputFormat.format(item.getNewDateTime())).append(",");
-                    } else {
-                        writer.append(",");
-                    }
-
-                    if (item.hasNewFilename()) {
-                        writer.append(item.getNewFilename());
-                    }
-
-                    mChangeItems.add(item);
-                }
-
-                mProgress++;
-                updateProgress(mProgress, mMaxProgress);
-            }
-            writer.close();
-        } catch (IOException e) {
-            mMessageConsumer.add("\nCANNOT WRITE CHANGES TO changes.csv: " + e.getMessage());
-            result++;
-        }
-
-        return result;
     }
 }
