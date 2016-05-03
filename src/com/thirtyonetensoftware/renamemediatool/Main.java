@@ -19,7 +19,7 @@ public class Main extends Application {
         // which layout to load, path is relative to this class
         FXMLLoader loader = new FXMLLoader(getClass().getResource("javafx" + File.separator + "layout.fxml"));
 
-        Parent root = (Parent) loader.load();
+        Parent root = loader.load();
 
         primaryStage.setTitle("RenameMediaTool");
         primaryStage.setScene(new Scene(root, 700, 800));

@@ -50,22 +50,14 @@ public class ProcessWorker extends Task<Integer> {
 
     private final MessageConsumer mMessageConsumer;
 
-    private final FileFilter mDirectoryFilter = new FileFilter() {
-        @Override
-        public boolean accept(File file) {
-            return file.isDirectory();
-        }
-    };
+    private final FileFilter mDirectoryFilter = File::isDirectory;
 
-    private final FileFilter mFileFilter = new FileFilter() {
-        @Override
-        public boolean accept(File file) {
-            String path = file.getPath().toLowerCase();
-            return path.endsWith(".jpeg") ||
-                    path.endsWith(".jpg") ||
-                    path.endsWith(".png") ||
-                    path.endsWith(".bmp");
-        }
+    private final FileFilter mFileFilter = file -> {
+        String path = file.getPath().toLowerCase();
+        return path.endsWith(".jpeg") ||
+                path.endsWith(".jpg") ||
+                path.endsWith(".png") ||
+                path.endsWith(".bmp");
     };
 
     // ------------------------------------------------------------------------
