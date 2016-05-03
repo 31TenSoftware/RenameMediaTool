@@ -1,2 +1,4 @@
 out/*
 .idea/*
+build.properties
+__artifacts_temp/*

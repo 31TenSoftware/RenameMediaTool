@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="renamemediatool" default="all">
+
+    <property file="build.properties"/>
+
+    <!-- Compiler options -->
+    <property name="compiler.debug" value="on"/>
+    <property name="compiler.generate.no.warnings" value="off"/>
+    <property name="compiler.args" value=""/>
+    <property name="compiler.max.memory" value="700m"/>
+    <patternset id="ignored.files">
+        <exclude name="**/*.hprof/**"/>
+        <exclude name="**/*.pyc/**"/>
+        <exclude name="**/*.pyo/**"/>
+        <exclude name="**/*.rbc/**"/>
+        <exclude name="**/*.yarb/**"/>
+        <exclude name="**/*~/**"/>
+        <exclude name="**/.DS_Store/**"/>
+        <exclude name="**/.git/**"/>
+        <exclude name="**/.hg/**"/>
+        <exclude name="**/.svn/**"/>
+        <exclude name="**/CVS/**"/>
+        <exclude name="**/RCS/**"/>
+        <exclude name="**/SCCS/**"/>
+        <exclude name="**/__pycache__/**"/>
+        <exclude name="**/_svn/**"/>
+        <exclude name="**/rcs/**"/>
+        <exclude name="**/vssver.scc/**"/>
+        <exclude name="**/vssver2.scc/**"/>
+    </patternset>
+    <patternset id="library.patterns">
+        <include name="*.war"/>
+        <include name="*.swc"/>
+        <include name="*.apk"/>
+        <include name="*.zip"/>
+        <include name="*.ear"/>
+        <include name="*.egg"/>
+        <include name="*.ane"/>
+        <include name="*.jar"/>
+    </patternset>
+    <patternset id="compiler.resources">
+        <exclude name="**/?*.java"/>
+        <exclude name="**/?*.form"/>
+        <exclude name="**/?*.class"/>
+        <exclude name="**/?*.groovy"/>
+        <exclude name="**/?*.scala"/>
+        <exclude name="**/?*.flex"/>
+        <exclude name="**/?*.kt"/>
+        <exclude name="**/?*.clj"/>
+    </patternset>
+
+    <!-- Project Libraries -->
+    <path id="library.org.apache.sanselan:sanselan:0.97-incubator.classpath">
+        <pathelement
+                location="${path.variable.maven_repository}/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar"/>
+    </path>
+
+    <!-- Modules -->
+    <!-- Module RenameMediaTool -->
+    <dirname property="module.renamemediatool.basedir" file="${ant.file}"/>
+
+    <property name="compiler.args.renamemediatool" value="-encoding UTF-8 -source 1.7 -target 1.7 ${compiler.args}"/>
+    <property name="renamemediatool.output.dir"
+              value="${module.renamemediatool.basedir}/out/production/RenameMediaTool"/>
+    <property name="renamemediatool.testoutput.dir" value="${module.renamemediatool.basedir}/out/test/RenameMediaTool"/>
+
+    <path id="renamemediatool.module.bootclasspath">
+        <!-- Paths to be included in compilation bootclasspath -->
+    </path>
+
+    <path id="renamemediatool.module.production.classpath">
+        <path refid="library.org.apache.sanselan:sanselan:0.97-incubator.classpath"/>
+    </path>
+
+    <patternset id="excluded.from.module.renamemediatool">
+        <patternset refid="ignored.files"/>
+    </patternset>
+
+    <patternset id="excluded.from.compilation.renamemediatool">
+        <patternset refid="excluded.from.module.renamemediatool"/>
+    </patternset>
+
+    <path id="renamemediatool.module.sourcepath">
+        <dirset dir="${module.renamemediatool.basedir}">
+            <include name="src"/>
+        </dirset>
+    </path>
+
+    <target name="all" depends="build.modules, build.all.artifacts" description="build all"/>
+
+    <target name="build.modules" depends="init, clean, compile.module.renamemediatool" description="build all modules"/>
+
+    <target name="build.all.artifacts" depends="artifact.renamemediatool" description="Build all artifacts">
+
+        <!-- Delete temporary files -->
+        <delete dir="${artifacts.temp.dir}"/>
+    </target>
+
+    <target name="init" description="Build initialization">
+        <!-- Perform any build initialization in this target -->
+    </target>
+
+    <target name="clean" depends="clean.module.renamemediatool, clean.artifact.renamemediatool"
+            description="cleanup all"/>
+
+    <target name="clean.module.renamemediatool" description="cleanup module">
+        <delete dir="${renamemediatool.output.dir}"/>
+        <delete dir="${renamemediatool.testoutput.dir}"/>
+    </target>
+
+    <target name="clean.artifact.renamemediatool" description="clean RenameMediaTool artifact output">
+        <delete dir="${artifact.output.renamemediatool}"/>
+        <delete dir="${artifact.temp.output.RenameMediaTool}"/>
+    </target>
+
+    <target name="compile.module.renamemediatool"
+            depends="compile.module.renamemediatool.production,compile.module.renamemediatool.tests"
+            description="Compile module RenameMediaTool"/>
+
+    <target name="compile.module.renamemediatool.production"
+            description="Compile module RenameMediaTool; production classes">
+        <mkdir dir="${renamemediatool.output.dir}"/>
+        <javac destdir="${renamemediatool.output.dir}" debug="${compiler.debug}"
+               nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
+            <compilerarg line="${compiler.args.renamemediatool}"/>
+            <bootclasspath refid="renamemediatool.module.bootclasspath"/>
+            <classpath refid="renamemediatool.module.production.classpath"/>
+            <src refid="renamemediatool.module.sourcepath"/>
+            <patternset refid="excluded.from.compilation.renamemediatool"/>
+        </javac>
+
+        <copy todir="${renamemediatool.output.dir}">
+            <fileset dir="${module.renamemediatool.basedir}/src">
+                <patternset refid="compiler.resources"/>
+                <type type="file"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compile.module.renamemediatool.tests" depends="compile.module.renamemediatool.production"
+            description="compile module RenameMediaTool; test classes" unless="skip.tests"/>
+
+    <target name="init.artifacts">
+        <property name="artifacts.temp.dir" value="${basedir}/__artifacts_temp"/>
+        <property name="artifact.output.renamemediatool" value="${basedir}/out/artifacts/RenameMediaTool"/>
+        <mkdir dir="${artifacts.temp.dir}"/>
+        <property name="artifact.temp.output.RenameMediaTool" value="${artifacts.temp.dir}/RenameMediaTool.jar"/>
+        <taskdef resource="com/sun/javafx/tools/ant/antlib.xml" uri="javafx:com.sun.javafx.tools.ant"
+                 classpath="${jdk.home.1.8}\lib\ant-javafx.jar"/>
+    </target>
+
+    <target name="artifact.renamemediatool" depends="init.artifacts, compile.module.renamemediatool"
+            description="Build &#39;RenameMediaTool&#39; artifact" xmlns:fx="javafx:com.sun.javafx.tools.ant">
+        <mkdir dir="${artifact.output.renamemediatool}"/>
+        <copy todir="${artifact.temp.output.RenameMediaTool}">
+            <fileset dir="${renamemediatool.output.dir}"/>
+        </copy>
+        <fx:fileset id="all_but_RenameMediaTool" dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.jar">
+            <exclude name="RenameMediaTool.jar"/>
+        </fx:fileset>
+        <fx:fileset id="all_RenameMediaTool" dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.jar"/>
+        <fx:application id="RenameMediaTool_id" name="RenameMediaTool"
+                        mainClass="com.thirtyonetensoftware.renamemediatool.Main"/>
+        <fx:csstobin outdir="${artifact.temp.output.RenameMediaTool}">
+            <fileset dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.css"/>
+        </fx:csstobin>
+        <fx:jar destfile="${artifact.temp.output.RenameMediaTool}\RenameMediaTool.jar">
+            <fx:application refid="RenameMediaTool_id"/>
+            <fileset dir="${artifact.temp.output.RenameMediaTool}" excludes="**/*.jar"/>
+            <fx:resources>
+                <fx:fileset refid="all_but_RenameMediaTool"/>
+            </fx:resources>
+            <manifest/>
+        </fx:jar>
+        <fx:deploy width="500" height="600" updatemode="background"
+                   outdir="${artifact.temp.output.RenameMediaTool}\deploy" outfile="RenameMediaTool">
+            <fx:permissions elevated="true"/>
+            <fx:application refid="RenameMediaTool_id"/>
+            <fx:info title="RenameMediaTool" vendor="31Ten Software"/>
+            <fx:resources>
+                <fx:fileset refid="all_RenameMediaTool"/>
+            </fx:resources>
+        </fx:deploy>
+        <property name="artifact.sign.vendor.RenameMediaTool" value="CN=31Ten Software"/>
+        <signjar alias="${keystore.alias}"
+                 keystore="${keystore}"
+                 storepass="${keystore.password}"
+                 keypass="${alias.password}">
+            <fileset dir="${artifact.temp.output.RenameMediaTool}/deploy">
+                <include name="*.jar"/>
+            </fileset>
+        </signjar>
+        <copy todir="${artifact.output.renamemediatool}">
+            <fileset dir="${artifact.temp.output.RenameMediaTool}/deploy"/>
+        </copy>
+
+        <delete includeemptydirs="true">
+            <fileset dir="${artifact.temp.output.RenameMediaTool}"/>
+        </delete>
+    </target>
+</project>
