@@ -60,10 +60,11 @@
     <!-- Module RenameMediaTool -->
     <dirname property="module.renamemediatool.basedir" file="${ant.file}"/>
 
-    <property name="compiler.args.renamemediatool" value="-encoding UTF-8 -source 1.7 -target 1.7 ${compiler.args}"/>
+    <property name="compiler.args.renamemediatool" value="-encoding UTF-8 -source 1.8 -target 1.8 ${compiler.args}"/>
     <property name="renamemediatool.output.dir"
               value="${module.renamemediatool.basedir}/out/production/RenameMediaTool"/>
     <property name="renamemediatool.testoutput.dir" value="${module.renamemediatool.basedir}/out/test/RenameMediaTool"/>
+    <property name="artifact.output.renamemediatool" value="${basedir}/out/artifacts/RenameMediaTool"/>
 
     <path id="renamemediatool.module.bootclasspath">
         <!-- Paths to be included in compilation bootclasspath -->
@@ -111,7 +112,6 @@
 
     <target name="clean.artifact.renamemediatool" description="clean RenameMediaTool artifact output">
         <delete dir="${artifact.output.renamemediatool}"/>
-        <delete dir="${artifact.temp.output.RenameMediaTool}"/>
     </target>
 
     <target name="compile.module.renamemediatool"
@@ -143,11 +143,10 @@
 
     <target name="init.artifacts">
         <property name="artifacts.temp.dir" value="${basedir}/__artifacts_temp"/>
-        <property name="artifact.output.renamemediatool" value="${basedir}/out/artifacts/RenameMediaTool"/>
         <mkdir dir="${artifacts.temp.dir}"/>
         <property name="artifact.temp.output.RenameMediaTool" value="${artifacts.temp.dir}/RenameMediaTool.jar"/>
         <taskdef resource="com/sun/javafx/tools/ant/antlib.xml" uri="javafx:com.sun.javafx.tools.ant"
-                 classpath="${jdk.home.1.8}\lib\ant-javafx.jar"/>
+                 classpath="${jdk.home.1.8}/lib/ant-javafx.jar"/>
     </target>
 
     <target name="artifact.renamemediatool" depends="init.artifacts, compile.module.renamemediatool"
@@ -163,9 +162,9 @@
         <fx:application id="RenameMediaTool_id" name="RenameMediaTool"
                         mainClass="com.thirtyonetensoftware.renamemediatool.Main"/>
         <fx:csstobin outdir="${artifact.temp.output.RenameMediaTool}">
-            <fileset dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.css"/>
+            <fx:fileset dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.css"/>
         </fx:csstobin>
-        <fx:jar destfile="${artifact.temp.output.RenameMediaTool}\RenameMediaTool.jar">
+        <fx:jar destfile="${artifact.temp.output.RenameMediaTool}/RenameMediaTool.jar">
             <fx:application refid="RenameMediaTool_id"/>
             <fileset dir="${artifact.temp.output.RenameMediaTool}" excludes="**/*.jar"/>
             <fx:resources>
@@ -174,7 +173,7 @@
             <manifest/>
         </fx:jar>
         <fx:deploy width="500" height="600" updatemode="background"
-                   outdir="${artifact.temp.output.RenameMediaTool}\deploy" outfile="RenameMediaTool">
+                   outdir="${artifact.temp.output.RenameMediaTool}/deploy" outfile="RenameMediaTool">
             <fx:permissions elevated="true"/>
             <fx:application refid="RenameMediaTool_id"/>
             <fx:info title="RenameMediaTool" vendor="31Ten Software"/>
