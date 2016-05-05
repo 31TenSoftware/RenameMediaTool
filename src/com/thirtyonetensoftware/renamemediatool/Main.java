@@ -6,8 +6,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.File;
-
 public class Main extends Application {
 
     // ------------------------------------------------------------------------
@@ -17,7 +15,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         // which layout to load, path is relative to this class
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("javafx" + File.separator + "layout.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("javafx/layout.fxml"));
 
         Parent root = loader.load();
 
