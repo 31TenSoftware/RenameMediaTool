@@ -2,9 +2,16 @@
 
 <project name="renamemediatool" default="all">
 
+
+    <!-- ====================================================================================== -->
+    <!-- Property Files                                                                       -->
+    <!-- ====================================================================================== -->
     <property file="build.properties"/>
 
-    <!-- Compiler options -->
+
+    <!-- ====================================================================================== -->
+    <!-- Compiler Options                                                                       -->
+    <!-- ====================================================================================== -->
     <property name="compiler.debug" value="on"/>
     <property name="compiler.generate.no.warnings" value="off"/>
     <property name="compiler.args" value=""/>
@@ -50,21 +57,31 @@
         <exclude name="**/?*.clj"/>
     </patternset>
 
-    <!-- Project Libraries -->
+
+    <!-- ====================================================================================== -->
+    <!-- Project Libraries                                                                      -->
+    <!-- ====================================================================================== -->
     <path id="library.org.apache.sanselan:sanselan:0.97-incubator.classpath">
         <pathelement
                 location="${path.variable.maven_repository}/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar"/>
     </path>
 
-    <!-- Modules -->
+
+    <!-- ====================================================================================== -->
+    <!-- Modules                                                                                -->
+    <!-- ====================================================================================== -->
     <!-- Module RenameMediaTool -->
+    <!-- read this for more info on ant.file and basedir https://ant.apache.org/manual/properties.html -->
     <dirname property="module.renamemediatool.basedir" file="${ant.file}"/>
 
-    <property name="compiler.args.renamemediatool" value="-encoding UTF-8 -source 1.8 -target 1.8 ${compiler.args}"/>
+    <property name="compiler.args.renamemediatool"
+              value="-encoding UTF-8 -source 8 -target 8 ${compiler.args}"/>
     <property name="renamemediatool.output.dir"
               value="${module.renamemediatool.basedir}/out/production/RenameMediaTool"/>
-    <property name="renamemediatool.testoutput.dir" value="${module.renamemediatool.basedir}/out/test/RenameMediaTool"/>
-    <property name="artifact.output.renamemediatool" value="${basedir}/out/artifacts/RenameMediaTool"/>
+    <property name="renamemediatool.testoutput.dir"
+              value="${module.renamemediatool.basedir}/out/test/RenameMediaTool"/>
+    <property name="artifact.output.renamemediatool"
+              value="${basedir}/out/artifacts/RenameMediaTool"/>
 
     <path id="renamemediatool.module.bootclasspath">
         <!-- Paths to be included in compilation bootclasspath -->
@@ -88,41 +105,50 @@
         </dirset>
     </path>
 
-    <target name="all" depends="build.modules, build.all.artifacts" description="build all"/>
 
-    <target name="build.modules" depends="init, clean, compile.module.renamemediatool" description="build all modules"/>
+    <!-- ====================================================================================== -->
+    <!-- Build Targets                                                                          -->
+    <!-- ====================================================================================== -->
+    <target name="all"
+            depends="build.modules, build.all.artifacts"
+            description="build all"/>
 
-    <target name="build.all.artifacts" depends="artifact.renamemediatool" description="Build all artifacts">
+    <target name="build.modules"
+            depends="init, clean, compile.module.renamemediatool"
+            description="build all modules"/>
 
-        <!-- Delete temporary files -->
-        <delete dir="${artifacts.temp.dir}"/>
-    </target>
-
-    <target name="init" description="Build initialization">
+    <target name="init"
+            description="Build initialization">
         <!-- Perform any build initialization in this target -->
     </target>
 
-    <target name="clean" depends="clean.module.renamemediatool, clean.artifact.renamemediatool"
+    <target name="clean"
+            depends="clean.module.renamemediatool, clean.artifact.renamemediatool"
             description="cleanup all"/>
 
-    <target name="clean.module.renamemediatool" description="cleanup module">
+    <target name="clean.module.renamemediatool"
+            description="cleanup module">
         <delete dir="${renamemediatool.output.dir}"/>
         <delete dir="${renamemediatool.testoutput.dir}"/>
     </target>
 
-    <target name="clean.artifact.renamemediatool" description="clean RenameMediaTool artifact output">
+    <target name="clean.artifact.renamemediatool"
+            description="clean RenameMediaTool artifact output">
         <delete dir="${artifact.output.renamemediatool}"/>
     </target>
 
     <target name="compile.module.renamemediatool"
-            depends="compile.module.renamemediatool.production,compile.module.renamemediatool.tests"
+            depends="compile.module.renamemediatool.production, compile.module.renamemediatool.tests"
             description="Compile module RenameMediaTool"/>
 
     <target name="compile.module.renamemediatool.production"
             description="Compile module RenameMediaTool; production classes">
         <mkdir dir="${renamemediatool.output.dir}"/>
-        <javac destdir="${renamemediatool.output.dir}" debug="${compiler.debug}"
-               nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
+        <javac destdir="${renamemediatool.output.dir}"
+               debug="${compiler.debug}"
+               nowarn="${compiler.generate.no.warnings}"
+               memorymaximumsize="${compiler.max.memory}"
+               fork="true">
             <compilerarg line="${compiler.args.renamemediatool}"/>
             <bootclasspath refid="renamemediatool.module.bootclasspath"/>
             <classpath refid="renamemediatool.module.production.classpath"/>
@@ -138,50 +164,76 @@
         </copy>
     </target>
 
-    <target name="compile.module.renamemediatool.tests" depends="compile.module.renamemediatool.production"
-            description="compile module RenameMediaTool; test classes" unless="skip.tests"/>
+    <target name="compile.module.renamemediatool.tests"
+            depends="compile.module.renamemediatool.production"
+            description="compile module RenameMediaTool; test classes"
+            unless="skip.tests"/>
+
+    <target name="build.all.artifacts"
+            depends="artifact.renamemediatool"
+            description="Build all artifacts"/>
 
     <target name="init.artifacts">
         <property name="artifacts.temp.dir" value="${basedir}/__artifacts_temp"/>
+        <delete dir="${artifacts.temp.dir}"/>
         <mkdir dir="${artifacts.temp.dir}"/>
-        <property name="artifact.temp.output.RenameMediaTool" value="${artifacts.temp.dir}/RenameMediaTool.jar"/>
-        <taskdef resource="com/sun/javafx/tools/ant/antlib.xml" uri="javafx:com.sun.javafx.tools.ant"
+        <property name="artifact.temp.output.RenameMediaTool"
+                  value="${artifacts.temp.dir}/RenameMediaTool.jar"/>
+        <taskdef resource="com/sun/javafx/tools/ant/antlib.xml"
+                 uri="javafx:com.sun.javafx.tools.ant"
                  classpath="${jdk.home.1.8}/lib/ant-javafx.jar"/>
     </target>
 
-    <target name="artifact.renamemediatool" depends="init.artifacts, compile.module.renamemediatool"
-            description="Build &#39;RenameMediaTool&#39; artifact" xmlns:fx="javafx:com.sun.javafx.tools.ant">
+    <target name="artifact.renamemediatool"
+            depends="init.artifacts, clean.artifact.renamemediatool, compile.module.renamemediatool"
+            description="Build &#39;RenameMediaTool&#39; artifact"
+            xmlns:fx="javafx:com.sun.javafx.tools.ant">
         <mkdir dir="${artifact.output.renamemediatool}"/>
         <copy todir="${artifact.temp.output.RenameMediaTool}">
             <fileset dir="${renamemediatool.output.dir}"/>
         </copy>
-        <fx:fileset id="all_but_RenameMediaTool" dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.jar">
+        <copy file="${path.variable.maven_repository}/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar"
+              tofile="${artifact.temp.output.RenameMediaTool}/sanselan-0.97-incubator.jar"/>
+        <fx:fileset id="all_but_RenameMediaTool"
+                    dir="${artifact.temp.output.RenameMediaTool}"
+                    includes="**/*.jar">
             <exclude name="RenameMediaTool.jar"/>
         </fx:fileset>
-        <fx:fileset id="all_RenameMediaTool" dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.jar"/>
-        <fx:application id="RenameMediaTool_id" name="RenameMediaTool"
+        <fx:fileset id="all_RenameMediaTool"
+                    dir="${artifact.temp.output.RenameMediaTool}"
+                    includes="**/*.jar"/>
+        <fx:application id="RenameMediaTool_id"
+                        name="RenameMediaTool"
                         mainClass="com.thirtyonetensoftware.renamemediatool.Main"/>
         <fx:csstobin outdir="${artifact.temp.output.RenameMediaTool}">
-            <fx:fileset dir="${artifact.temp.output.RenameMediaTool}" includes="**/*.css"/>
+            <fx:fileset dir="${artifact.temp.output.RenameMediaTool}"
+                        includes="**/*.css"/>
         </fx:csstobin>
         <fx:jar destfile="${artifact.temp.output.RenameMediaTool}/RenameMediaTool.jar">
             <fx:application refid="RenameMediaTool_id"/>
-            <fileset dir="${artifact.temp.output.RenameMediaTool}" excludes="**/*.jar"/>
+            <fileset dir="${artifact.temp.output.RenameMediaTool}"
+                     excludes="**/*.jar"/>
             <fx:resources>
                 <fx:fileset refid="all_but_RenameMediaTool"/>
             </fx:resources>
             <manifest/>
         </fx:jar>
-        <fx:deploy width="500" height="600" updatemode="background"
-                   outdir="${artifact.temp.output.RenameMediaTool}/deploy" outfile="RenameMediaTool">
+        <fx:deploy width="500"
+                   height="600"
+                   updatemode="background"
+                   outdir="${artifact.temp.output.RenameMediaTool}/deploy"
+                   outfile="RenameMediaTool">
+            <fx:platform basedir="${jdk.home.1.8}"/>
             <fx:permissions elevated="true"/>
             <fx:application refid="RenameMediaTool_id"/>
-            <fx:info title="RenameMediaTool" vendor="31Ten Software"/>
+            <fx:info title="RenameMediaTool"
+                     vendor="31Ten Software"/>
             <fx:resources>
                 <fx:fileset refid="all_RenameMediaTool"/>
             </fx:resources>
         </fx:deploy>
-        <property name="artifact.sign.vendor.RenameMediaTool" value="CN=31Ten Software"/>
+        <property name="artifact.sign.vendor.RenameMediaTool"
+                  value="CN=31Ten Software"/>
         <signjar alias="${keystore.alias}"
                  keystore="${keystore}"
                  storepass="${keystore.password}"
