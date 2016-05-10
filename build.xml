@@ -171,7 +171,10 @@
 
     <target name="build.all.artifacts"
             depends="artifact.renamemediatool"
-            description="Build all artifacts"/>
+            description="Build all artifacts">
+        <!-- Delete temporary files -->
+        <delete dir="${artifacts.temp.dir}"/>
+    </target>
 
     <target name="init.artifacts">
         <property name="artifacts.temp.dir" value="${basedir}/__artifacts_temp"/>
@@ -191,6 +194,9 @@
         <mkdir dir="${artifact.output.renamemediatool}"/>
         <copy todir="${artifact.temp.output.RenameMediaTool}">
             <fileset dir="${renamemediatool.output.dir}"/>
+
+            <!-- copy uncompiled source into output jar directory as well -->
+            <fileset dir="${module.renamemediatool.basedir}/src"/>
         </copy>
         <copy file="${path.variable.maven_repository}/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar"
               tofile="${artifact.temp.output.RenameMediaTool}/sanselan-0.97-incubator.jar"/>
@@ -238,6 +244,8 @@
                  keystore="${keystore}"
                  storepass="${keystore.password}"
                  keypass="${alias.password}">
+            <!-- can only use the safecreateive.org tsa 5 times a day -->
+            <!--tsaurl="http://tsa.safecreative.org/">-->
             <fileset dir="${artifact.temp.output.RenameMediaTool}/deploy">
                 <include name="*.jar"/>
             </fileset>
