@@ -294,6 +294,13 @@
             <zipfileset dir="${renamemediatool.output.dir}"/>
             <zipfileset
                     src="${path.variable.maven_repository}/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar"/>
+
+            <manifest>
+                <attribute name="Manifest-Version"
+                           value="0.1.0"/>
+                <attribute name="Main-Class"
+                           value="com.thirtyonetensoftware.renamemediatool.Main"/>
+            </manifest>
         </jar>
 
         <mkdir dir="${artifact.output.renamemediatool.jar}"/>
