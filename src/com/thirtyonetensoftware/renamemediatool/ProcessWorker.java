@@ -57,7 +57,9 @@ public class ProcessWorker extends Task<Integer> {
         return path.endsWith(".jpeg") ||
                 path.endsWith(".jpg") ||
                 path.endsWith(".png") ||
-                path.endsWith(".bmp");
+                path.endsWith(".bmp") ||
+                path.endsWith(".mp4") ||
+                path.endsWith(".mov");
     };
 
     // ------------------------------------------------------------------------
@@ -150,7 +152,7 @@ public class ProcessWorker extends Task<Integer> {
     private int processDirectory(File file) {
         int result = 0;
 
-        // process any images in the current directory
+        // process any media in the current directory
         result += processFiles(file);
 
         // process any directories in the current directory
@@ -175,7 +177,7 @@ public class ProcessWorker extends Task<Integer> {
         }
 
         ArrayList<MediaItem> items = new ArrayList<>();
-        // for all the images, if we can determine a date/time, add it to the list
+        // for all the media, if we can determine a date/time, add it to the list
         for (File f : files) {
             if (isCancelled()) {
                 return result;
@@ -221,7 +223,7 @@ public class ProcessWorker extends Task<Integer> {
             updateProgress(mProgress, mMaxProgress);
         }
 
-        // loop through all images, if one will require a new date or filename, print it out
+        // loop through all media, if one will require a new date or filename, print it out
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesLog, true));
             for (MediaItem item : items) {

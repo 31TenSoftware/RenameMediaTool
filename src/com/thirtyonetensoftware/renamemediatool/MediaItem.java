@@ -138,7 +138,7 @@ public class MediaItem implements Comparable<MediaItem> {
                     mOriginalDateTime = mFormat.parse(dateTimeValue.getStringValue().trim());
                 }
             }
-            // image is a .png or .bmp
+            // media is not a jpeg, lastModified should be fine
             else {
                 mOriginalDateTime = new Date(mFile.lastModified());
             }
@@ -189,9 +189,9 @@ public class MediaItem implements Comparable<MediaItem> {
             exif.add(new_date_time_orig_field);
             exif.add(new_create_date_field);
 
-            saveExifToFile(mFile, outputSet);
+            saveExifToJpeg(mFile, outputSet);
         }
-        // image is a .png or .bmp
+        // media is not a jpeg, lastModified should be sufficient
         else {
             mOriginalDateTime = new Date(mFile.lastModified());
         }
@@ -262,17 +262,17 @@ public class MediaItem implements Comparable<MediaItem> {
         return null;
     }
 
-    private void saveExifToFile(File imageFile, TiffOutputSet exif)
+    private void saveExifToJpeg(File jpegFile, TiffOutputSet exif)
             throws IOException, ImageWriteException, ImageReadException {
-        String tempFileName = imageFile.getAbsolutePath() + ".tmp";
+        String tempFileName = jpegFile.getAbsolutePath() + ".tmp";
         File tempFile = new File(tempFileName);
 
         BufferedOutputStream tempStream = new BufferedOutputStream(new FileOutputStream(tempFile));
-        new ExifRewriter().updateExifMetadataLossless(imageFile, tempStream, exif);
+        new ExifRewriter().updateExifMetadataLossless(jpegFile, tempStream, exif);
         tempStream.close();
 
-        if (imageFile.delete()) {
-            tempFile.renameTo(imageFile);
+        if (jpegFile.delete()) {
+            tempFile.renameTo(jpegFile);
         }
     }
 }
