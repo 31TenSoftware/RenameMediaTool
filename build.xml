@@ -74,6 +74,10 @@
     <!-- read this for more info on ant.file and basedir https://ant.apache.org/manual/properties.html -->
     <dirname property="module.renamemediatool.basedir" file="${ant.file}"/>
 
+    <!-- Application Version -->
+    <property name="application.version"
+              value="0.2.0"/>
+
     <property name="compiler.args.renamemediatool"
               value="-encoding UTF-8 -source 8 -target 8 ${compiler.args}"/>
     <property name="renamemediatool.output.dir"
@@ -234,7 +238,7 @@
             <fx:fileset dir="${artifact.output.temp.RenameMediaTool.javafx}"
                         includes="**/*.css"/>
         </fx:csstobin>
-        <fx:jar destfile="${artifact.output.temp.RenameMediaTool.javafx}/RenameMediaTool.jar">
+        <fx:jar destfile="${artifact.output.temp.RenameMediaTool.javafx}/RenameMediaTool_${application.version}.jar">
             <fx:application refid="RenameMediaTool_id"/>
             <fileset dir="${artifact.output.temp.RenameMediaTool.javafx}"
                      excludes="**/*.jar"/>
@@ -281,7 +285,7 @@
     <target name="init.artifact.renamemediatool.jar">
         <property name="artifact.output.temp.renamemediatool.jar.dir" value="${artifacts.temp.dir}/jar"/>
         <property name="artifact.output.temp.renamemediatool.jar"
-                  value="${artifacts.temp.dir}/jar/RenameMediaTool.jar"/>
+                  value="${artifacts.temp.dir}/jar/RenameMediaTool_${application.version}.jar"/>
     </target>
 
     <target name="artifact.renamemediatool.jar"
@@ -297,7 +301,7 @@
 
             <manifest>
                 <attribute name="Manifest-Version"
-                           value="0.1.0"/>
+                           value="${application.version}"/>
                 <attribute name="Main-Class"
                            value="com.thirtyonetensoftware.renamemediatool.Main"/>
             </manifest>
@@ -305,7 +309,7 @@
 
         <mkdir dir="${artifact.output.renamemediatool.jar}"/>
         <copy file="${artifact.output.temp.renamemediatool.jar}"
-              tofile="${artifact.output.renamemediatool.jar}/RenameMediaTool.jar"/>
+              tofile="${artifact.output.renamemediatool.jar}/RenameMediaTool_${application.version}.jar"/>
 
         <delete includeemptydirs="true">
             <fileset dir="${artifact.output.temp.renamemediatool.jar.dir}"/>
