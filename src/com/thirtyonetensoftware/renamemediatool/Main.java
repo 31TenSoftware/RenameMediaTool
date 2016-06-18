@@ -19,7 +19,7 @@ public class Main extends Application {
 
         Parent root = loader.load();
 
-        primaryStage.setTitle("RenameMediaTool v0.2.0");
+        primaryStage.setTitle("RenameMediaTool v0.3.0");
         primaryStage.setScene(new Scene(root, 700, 800));
         primaryStage.show();
 
