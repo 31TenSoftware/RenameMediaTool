@@ -1,8 +1,6 @@
 package com.thirtyonetensoftware.renamemediatool;
 
-import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonth;
-import com.thirtyonetensoftware.renamemediatool.filenametester.YearDashMonthDashDay;
-import com.thirtyonetensoftware.renamemediatool.filenametester.YearMonthDay;
+import com.thirtyonetensoftware.renamemediatool.filenametester.*;
 import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 import javafx.concurrent.Task;
 import javafx.scene.control.TextArea;
@@ -83,6 +81,9 @@ public class ProcessWorker extends Task<Integer> {
         mMessageConsumer.start();
 
         mFilenameTesters.clear();
+        mFilenameTesters.add(new YearDashMonthDashDayWithTime());
+        mFilenameTesters.add(new YearMonthDayTime());
+        // mFilenameTesters.add(new MonthDayYearTime());
         mFilenameTesters.add(new YearDashMonthDashDay());
         mFilenameTesters.add(new YearDashMonth());
         mFilenameTesters.add(new YearMonthDay());
@@ -236,7 +237,7 @@ public class ProcessWorker extends Task<Integer> {
                     writer.append(item.getFilepath()).append(",");
 
                     if (item.hasNewDateTime()) {
-                        writer.append(mOutputFormat.format(item.getNewDateTime())).append(",");
+                        writer.append(mOutputFormat.format(item.getDateTime())).append(",");
                     } else {
                         writer.append(",");
                     }

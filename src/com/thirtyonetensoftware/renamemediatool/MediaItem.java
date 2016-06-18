@@ -19,11 +19,14 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
@@ -37,15 +40,21 @@ public class MediaItem implements Comparable<MediaItem> {
     private static final SimpleDateFormat mFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
 
     // Filename format
-    private static final SimpleDateFormat mFilenameFormat = new SimpleDateFormat("yyyy-MM-dd_");
+    private static final SimpleDateFormat mFilenameFormat = new SimpleDateFormat("yyyy-MM-dd_HHmmss_");
+
+    private static final String DATE_CREATED_KEY = "creationTime";
+
+    // ------------------------------------------------------------------------
+    // Instance Variables
+    // ------------------------------------------------------------------------
 
     private File mFile;
 
     private ArrayList<FilenameTester> mFilenameTesters = new ArrayList<>();
 
-    private Date mOriginalDateTime;
+    private Date mDateTime;
 
-    private Date mNewDateTime;
+    private Date mDateCreated;
 
     private String mNewFilename;
 
@@ -97,25 +106,23 @@ public class MediaItem implements Comparable<MediaItem> {
     }
 
     public Date getDateTime() {
-        return mNewDateTime != null ? mNewDateTime : mOriginalDateTime;
+        return mDateTime;
     }
 
     public void setDateTime(Date dateTime) {
-        mNewDateTime = dateTime;
-    }
-
-    public Date getNewDateTime() {
-        return mNewDateTime;
+        mDateTime = dateTime;
     }
 
     public boolean hasNewDateTime() {
-        return mNewDateTime != null;
+        return !mDateTime.equals(mDateCreated);
     }
 
     public boolean determineDateTime() {
         try {
             String filename = mFile.getName().toLowerCase();
+            Date dateTime = null;
 
+            // if it's a jpeg, try to get the date time from the exif
             if (filename.endsWith(".jpeg") | filename.endsWith(".jpg")) {
                 TiffField dateTimeValue = null;
 
@@ -131,24 +138,36 @@ public class MediaItem implements Comparable<MediaItem> {
                     }
                 }
 
-                // if there's no date/time value, try to determine one from the file's name
-                if (dateTimeValue == null) {
-                    mNewDateTime = parseFilenameForDateTime(mFile);
-                } else {
-                    mOriginalDateTime = mFormat.parse(dateTimeValue.getStringValue().trim());
+                if (dateTimeValue != null) {
+                    dateTime = mFormat.parse(dateTimeValue.getStringValue().trim());
                 }
             }
-            // media is not a jpeg, lastModified should be fine
-            else {
-                mOriginalDateTime = new Date(mFile.lastModified());
+
+            // if there's no date/time value, try to determine one from the file's name
+            if (dateTime == null) {
+                dateTime = parseFilenameForDateTime(mFile);
             }
 
-            if (mNewDateTime == null && mOriginalDateTime == null) {
-                mErrorMessage = "\n\nCOULD NOT DETERMINE DATE/TIME FOR " + mFile.getPath() + "\n";
-                return false;
-            } else {
-                return true;
+            /*
+             * if still no date/time value, use file's last modified
+             * lastModified will always return a time milliseconds, and date can always convert that long
+             * so dateTime will never be null at the end of this method
+             */
+            if (dateTime == null) {
+                dateTime = new Date(mFile.lastModified());
             }
+
+            // get the Date Created field
+            FileTime dateCreated = (FileTime) Files.getAttribute(mFile.toPath(), DATE_CREATED_KEY);
+            if (dateCreated != null) {
+                mDateCreated = new Date(dateCreated.toMillis());
+            }
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(dateTime);
+            mDateTime = calendar.getTime();
+
+            return true;
         } catch (ImageReadException | IOException | ParseException e) {
             mErrorMessage = "\n\n" + mFile.getPath() + " ERROR: " + e.getMessage() + "\n";
             return false;
@@ -156,8 +175,9 @@ public class MediaItem implements Comparable<MediaItem> {
     }
 
     public void commitNewDateTime() throws IOException, ImageReadException, ImageWriteException {
-        String filename = mFile.getName().toLowerCase();
+        Date dateTime = getDateTime();
 
+        String filename = mFile.getName().toLowerCase();
         if (filename.endsWith(".jpeg") | filename.endsWith(".jpg")) {
             TiffOutputSet outputSet = new TiffOutputSet();
 
@@ -172,7 +192,7 @@ public class MediaItem implements Comparable<MediaItem> {
                 }
             }
 
-            String newDateTimeValue = mFormat.format(getNewDateTime());
+            String newDateTimeValue = mFormat.format(dateTime);
 
             TiffOutputField new_date_time_orig_field = new TiffOutputField(TiffConstants.EXIF_TAG_DATE_TIME_ORIGINAL,
                     TiffConstants.FIELD_TYPE_ASCII,
@@ -191,10 +211,12 @@ public class MediaItem implements Comparable<MediaItem> {
 
             saveExifToJpeg(mFile, outputSet);
         }
-        // media is not a jpeg, lastModified should be sufficient
-        else {
-            mOriginalDateTime = new Date(mFile.lastModified());
-        }
+
+        long dateTimeInMillis = dateTime.getTime();
+        // write to lastModified
+        mFile.setLastModified(dateTimeInMillis);
+        // write to dateCreated
+        Files.setAttribute(mFile.toPath(), DATE_CREATED_KEY, FileTime.fromMillis(dateTimeInMillis));
     }
 
     public String getNewFilename() {
@@ -212,7 +234,7 @@ public class MediaItem implements Comparable<MediaItem> {
         String extension = currentName.substring(dot).toLowerCase();
 
         String newBaseFilename = mFilenameFormat.format(getDateTime()) +
-                (String.format("%04d", count));
+                (String.format("%03d", count));
 
         String newFilename = newBaseFilename + extension;
 
