@@ -234,7 +234,7 @@ public class MediaItem implements Comparable<MediaItem> {
         String extension = currentName.substring(dot).toLowerCase();
 
         String newBaseFilename = mFilenameFormat.format(getDateTime()) +
-                (String.format("%03d", count));
+                (String.format("%02d", count));
 
         String newFilename = newBaseFilename + extension;
 
