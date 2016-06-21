@@ -206,14 +206,20 @@ public class ProcessWorker extends Task<Integer> {
 
         // calculate new filenames for the ones with newDateTime
         Calendar calendar = Calendar.getInstance();
-        int count = 1, dayOfYear = -1;
+        int count = 1, dayOfYear = -1, hourOfDay = -1, minute = -1, second = -1;
         for (MediaItem item : items) {
             calendar.setTime(item.getDateTime());
 
-            if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear) {
+            if (calendar.get(Calendar.DAY_OF_YEAR) == dayOfYear
+                    && calendar.get(Calendar.HOUR_OF_DAY) == hourOfDay
+                    && calendar.get(Calendar.MINUTE) == minute
+                    && calendar.get(Calendar.SECOND) == second) {
                 count++;
             } else {
                 dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+                hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+                minute = calendar.get(Calendar.MINUTE);
+                second = calendar.get(Calendar.SECOND);
                 count = 1;
             }
 
