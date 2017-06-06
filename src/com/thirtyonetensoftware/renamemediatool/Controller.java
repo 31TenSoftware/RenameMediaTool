@@ -43,7 +43,7 @@ public class Controller {
 
     private ProcessWorker mTask;
 
-    private final ArrayList<MediaItem> mChangeItems = new ArrayList<>();
+    private ArrayList<MediaItem> mChangeItems;
 
     private File mChangesLog;
 
@@ -71,6 +71,8 @@ public class Controller {
                 mOutputBox.appendText("\nCHANGES FILE COULD NOT BE CREATED: " + e.getMessage());
                 return;
             }
+
+            mChangeItems = new ArrayList<>();
 
             mTask = new ProcessWorker(this, mOutputBox, mRootDir, mStaggerDateTimes.isSelected(),
                     mChangesLog, mChangeItems);
