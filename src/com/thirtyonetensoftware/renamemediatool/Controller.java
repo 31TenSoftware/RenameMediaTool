@@ -37,6 +37,8 @@ public class Controller {
 
     private Stage mStage;
 
+    private File mRootDir;
+
     private final DirectoryChooser mDirectoryChooser = new DirectoryChooser();
 
     private ProcessWorker mTask;
@@ -50,12 +52,14 @@ public class Controller {
     // ------------------------------------------------------------------------
 
     public void onChooseDirectoryButtonClick() {
-        File file = mDirectoryChooser.showDialog(mStage);
+        mDirectoryChooser.setInitialDirectory(mRootDir != null && mRootDir.exists() ?
+                mRootDir : new File(System.getProperty("user.dir")));
+        mRootDir = mDirectoryChooser.showDialog(mStage);
 
-        if (file != null) {
-            mPathLabel.setText(file.getPath());
+        if (mRootDir != null) {
+            mPathLabel.setText(mRootDir.getPath());
 
-            mChangesLog = new File(file.getPath() + File.separator + "changes.csv");
+            mChangesLog = new File(mRootDir.getPath() + File.separator + "changes.csv");
             try {
                 mChangesLog.createNewFile();
                 BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesLog));
@@ -68,7 +72,8 @@ public class Controller {
                 return;
             }
 
-            mTask = new ProcessWorker(this, mOutputBox, file, mStaggerDateTimes.isSelected(), mChangesLog, mChangeItems);
+            mTask = new ProcessWorker(this, mOutputBox, mRootDir, mStaggerDateTimes.isSelected(),
+                    mChangesLog, mChangeItems);
 
             mProgressBar.progressProperty().unbind();
             mProgressBar.setProgress(0);
