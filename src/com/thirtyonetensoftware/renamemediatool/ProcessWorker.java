@@ -5,7 +5,8 @@ import com.thirtyonetensoftware.renamemediatool.support.FilenameTester;
 import javafx.concurrent.Task;
 import javafx.scene.control.TextArea;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,8 +30,6 @@ public class ProcessWorker extends Task<Integer> {
     private final File mFile;
 
     private final boolean mStaggerDateTimes;
-
-    private final File mChangesLog;
 
     private final ArrayList<MediaItem> mChangeItems;
 
@@ -65,10 +64,9 @@ public class ProcessWorker extends Task<Integer> {
     // ------------------------------------------------------------------------
 
     public ProcessWorker(Controller controller, TextArea textArea, File file, boolean staggerDateTimes,
-                         File changesLog, ArrayList<MediaItem> changeItems) {
+                         ArrayList<MediaItem> changeItems) {
         mController = controller;
         mFile = file;
-        mChangesLog = changesLog;
 
         mStaggerDateTimes = staggerDateTimes;
         PROGRESS_LOOPS = mStaggerDateTimes ? 4 : 3;
@@ -97,7 +95,7 @@ public class ProcessWorker extends Task<Integer> {
     protected Integer call() throws Exception {
         setup(mFile);
 
-        mMessageConsumer.add("\n\nSTARTING\n\nErrors:");
+        mMessageConsumer.add("\n\nSCANNING...");
 
         int result = processDirectory(mFile);
 
@@ -172,7 +170,7 @@ public class ProcessWorker extends Task<Integer> {
 
         File[] files = file.listFiles(mFileFilter);
         if (files == null) {
-            mMessageConsumer.add("\nNO FILES FOUND IN: " + file.getPath());
+            mMessageConsumer.add("\n\nNO FILES FOUND IN: " + file.getPath());
             result++;
             return result;
         }
@@ -231,37 +229,36 @@ public class ProcessWorker extends Task<Integer> {
         }
 
         // loop through all media, if one will require a new date or filename, print it out
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesLog, true));
-            for (MediaItem item : items) {
-                if (isCancelled()) {
-                    return result;
-                }
-
-                if (item.hasNewDateTime() || item.hasNewFilename()) {
-                    writer.newLine();
-                    writer.append(item.getFilepath()).append(",");
-
-                    if (item.hasNewDateTime()) {
-                        writer.append(mOutputFormat.format(item.getDateTime())).append(",");
-                    } else {
-                        writer.append(",");
-                    }
-
-                    if (item.hasNewFilename()) {
-                        writer.append(item.getNewFilename());
-                    }
-
-                    mChangeItems.add(item);
-                }
-
-                mProgress++;
-                updateProgress(mProgress, mMaxProgress);
+        if (!items.isEmpty()) {
+            mMessageConsumer.add("\n" + String.format("%50s  |  %19s  |  %s", "file", "new datetime", "new filename"));
+        }
+        for (MediaItem item : items) {
+            if (isCancelled()) {
+                return result;
             }
-            writer.close();
-        } catch (IOException e) {
-            mMessageConsumer.add("\nCANNOT WRITE CHANGES TO changes.csv: " + e.getMessage());
-            result++;
+
+            if (item.hasNewDateTime() || item.hasNewFilename()) {
+                // pad the filepath to at least 50 characters, left-aligned. 52 with the last 2 spaces
+                String formattedFilepath = String.format("%-50s  ", item.getFilepath());
+                // only show the last 52 characters
+                mMessageConsumer.add("\n" + formattedFilepath.substring(formattedFilepath.length() - 52));
+
+                if (item.hasNewDateTime()) {
+                    mMessageConsumer.add("|  " + mOutputFormat.format(item.getDateTime()) + "  |");
+                } else {
+                    // 19 spaces in the middle, for the same length as mOutputFormat
+                    mMessageConsumer.add("|                       |");
+                }
+
+                if (item.hasNewFilename()) {
+                    mMessageConsumer.add("  " + item.getNewFilename());
+                }
+
+                mChangeItems.add(item);
+            }
+
+            mProgress++;
+            updateProgress(mProgress, mMaxProgress);
         }
 
         return result;

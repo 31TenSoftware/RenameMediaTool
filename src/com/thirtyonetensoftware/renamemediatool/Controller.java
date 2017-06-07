@@ -5,10 +5,7 @@ import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class Controller {
@@ -19,9 +16,6 @@ public class Controller {
 
     @FXML
     private Label mPathLabel;
-
-    @FXML
-    private Label mChangesLogLabel;
 
     @FXML
     private CheckBox mStaggerDateTimes;
@@ -45,8 +39,6 @@ public class Controller {
 
     private ArrayList<MediaItem> mChangeItems;
 
-    private File mChangesLog;
-
     // ------------------------------------------------------------------------
     // Layout Methods
     // ------------------------------------------------------------------------
@@ -59,23 +51,9 @@ public class Controller {
         if (mRootDir != null) {
             mPathLabel.setText(mRootDir.getPath());
 
-            mChangesLog = new File(mRootDir.getPath() + File.separator + "changes.csv");
-            try {
-                mChangesLog.createNewFile();
-                BufferedWriter writer = new BufferedWriter(new FileWriter(mChangesLog));
-                writer.write("file,newDateTime,newFilename");
-                writer.close();
-
-                mChangesLogLabel.setText(mChangesLog.getPath());
-            } catch (IOException e) {
-                mOutputBox.appendText("\nCHANGES FILE COULD NOT BE CREATED: " + e.getMessage());
-                return;
-            }
-
             mChangeItems = new ArrayList<>();
 
-            mTask = new ProcessWorker(this, mOutputBox, mRootDir, mStaggerDateTimes.isSelected(),
-                    mChangesLog, mChangeItems);
+            mTask = new ProcessWorker(this, mOutputBox, mRootDir, mStaggerDateTimes.isSelected(), mChangeItems);
 
             mProgressBar.progressProperty().unbind();
             mProgressBar.setProgress(0);
@@ -93,10 +71,6 @@ public class Controller {
 
         if (mTask != null) {
             mTask.cancel();
-        }
-
-        if (mChangesLog != null && mChangesLog.exists()) {
-            mChangesLog.delete();
         }
     }
 
@@ -116,10 +90,6 @@ public class Controller {
         Thread mThread = new Thread(committer);
         mThread.setDaemon(true);
         mThread.start();
-
-        if (mChangesLog != null && mChangesLog.exists()) {
-            mChangesLog.delete();
-        }
     }
 
     // ------------------------------------------------------------------------

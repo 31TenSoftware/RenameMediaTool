@@ -20,7 +20,7 @@ public class Main extends Application {
         Parent root = loader.load();
 
         primaryStage.setTitle("RenameMediaTool v0.3.0");
-        primaryStage.setScene(new Scene(root, 700, 800));
+        primaryStage.setScene(new Scene(root, 1050, 700));
         primaryStage.show();
 
         // set stage in controller, for the file picker
