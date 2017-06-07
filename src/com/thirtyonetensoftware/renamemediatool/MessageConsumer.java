@@ -32,7 +32,7 @@ public class MessageConsumer extends AnimationTimer {
     // ------------------------------------------------------------------------
 
     @Override
-    public void handle(long now) {
+    public synchronized void handle(long now) {
         mTextArea.appendText(buffer.toString());
         buffer = new StringBuffer(CAPACITY);
     }
@@ -41,7 +41,7 @@ public class MessageConsumer extends AnimationTimer {
     // Public Methods
     // ------------------------------------------------------------------------
 
-    public void add(String text) {
+    public synchronized void add(String text) {
         buffer.append(text);
     }
 }
