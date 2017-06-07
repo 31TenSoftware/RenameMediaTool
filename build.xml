@@ -76,7 +76,7 @@
 
     <!-- Application Version -->
     <property name="application.version"
-              value="0.3.0"/>
+              value="0.4.0"/>
 
     <property name="compiler.args.renamemediatool"
               value="-encoding UTF-8 -source 8 -target 8 ${compiler.args}"/>
