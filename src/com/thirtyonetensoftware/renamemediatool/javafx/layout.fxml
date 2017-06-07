@@ -44,7 +44,11 @@
             <Insets bottom="10.0" top="10.0"/>
         </VBox.margin>
     </Button>
-    <TextArea fx:id="mOutputBox" prefHeight="200.0" prefWidth="200.0" wrapText="true" VBox.vgrow="ALWAYS"/>
+    <TextArea fx:id="mOutputBox" prefHeight="200.0" prefWidth="200.0" wrapText="true" VBox.vgrow="ALWAYS">
+        <font>
+            <Font name="Monospaced Regular" size="15.0"/>
+        </font>
+    </TextArea>
     <Button fx:id="mWriteChangesButton" disable="true" mnemonicParsing="false" onAction="#onWriteChangesButtonClick"
             prefHeight="35.0" prefWidth="Infinity" text="Write Changes to Files">
         <VBox.margin>
