@@ -1,4 +1,5 @@
 ## RenameMediaTool
+### This repository has been archived in favor of MediaUtilityBelt - an updated version of this application
 a tool for correcting media EXIF data, last modified, date created, and chronologically renaming.
 
 Check out the [releases](https://github.com/31TenSoftware/RenameMediaTool/releases) if you just want to use it, but a few things you should know:
